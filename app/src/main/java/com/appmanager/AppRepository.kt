@@ -55,6 +55,10 @@ private data class RemoteMeta(
  */
 object AppRepository {
 
+    /** App Manager's own repo — always checked so it can update itself. */
+    const val SELF_REPO = "https://github.com/PortableDiag/AppManager"
+    const val SELF_PACKAGE = "com.appmanager"
+
     /** The app's private drop folder — the default, needing no storage permission. */
     fun defaultLocalDir(context: Context): File {
         val dir = File(context.getExternalFilesDir(null), "repo")
@@ -131,6 +135,16 @@ object AppRepository {
                 } catch (_: Exception) {
                     // A single unreachable/invalid source shouldn't sink the whole refresh.
                 }
+            }
+
+            // Always check App Manager's own repo so it can self-update, unless the user
+            // already listed it as a source (avoids a duplicate API call).
+            if (sources.none { it.contains("PortableDiag/AppManager", true) }) {
+                try {
+                    resolveGitHubApk(SELF_REPO)?.let { meta ->
+                        fetchRemoteApk(context, meta.apkUrl)?.let { merge(candidates, it.withMeta(meta)) }
+                    }
+                } catch (_: Exception) {}
             }
 
             // Local APKs fill in / override only where they're newer.

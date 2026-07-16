@@ -66,6 +66,11 @@ class Prefs(context: Context) {
         get() = sp.getInt(KEY_FILTER, 0)
         set(value) = sp.edit().putInt(KEY_FILTER, value).apply()
 
+    /** Background update check: 0 = off, 1 = daily, 2 = weekly. */
+    var autoUpdateMode: Int
+        get() = sp.getInt(KEY_AUTO, AUTO_OFF)
+        set(value) = sp.edit().putInt(KEY_AUTO, value).apply()
+
     /** Serialize all settings to portable JSON. */
     fun exportJson(): String {
         val o = JSONObject()
@@ -74,6 +79,7 @@ class Prefs(context: Context) {
         o.put("favoriteDevs", JSONArray(favoriteDevs))
         o.put("localDir", localDir)
         o.put("theme", themeName(themeMode))
+        o.put("autoUpdate", autoUpdateMode)
         return o.toString(2)
     }
 
@@ -84,6 +90,7 @@ class Prefs(context: Context) {
         o.optJSONArray("favoriteDevs")?.let { favoriteDevs = it.toStringList() }
         if (o.has("localDir")) localDir = o.optString("localDir")
         if (o.has("theme")) themeMode = themeFromName(o.optString("theme"), themeMode)
+        if (o.has("autoUpdate")) autoUpdateMode = o.optInt("autoUpdate", autoUpdateMode)
     }
 
     private fun JSONArray.toStringList(): List<String> =
@@ -109,6 +116,11 @@ class Prefs(context: Context) {
         private const val KEY_LOCAL = "local_dir"
         private const val KEY_SORT = "sort_mode"
         private const val KEY_FILTER = "filter_mode"
+        private const val KEY_AUTO = "auto_update_mode"
+
+        const val AUTO_OFF = 0
+        const val AUTO_DAILY = 1
+        const val AUTO_WEEKLY = 2
         private const val KEY_THEME = "theme_mode"
 
         const val THEME_SYSTEM = 0

@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.1
+- **Self-update:** App Manager always checks its own GitHub repo, so it appears in the list
+  and updates itself like any other app.
+- **Automatic update checks:** an optional background check (Settings → Automatic updates:
+  Off / Daily / Weekly) that posts a notification when updates are waiting, with an
+  "Update all" action. Android still shows its install prompt — this notifies and one-taps
+  into the updates; it can't install silently.
+
 ## 1.0 — first release
 - Catalog view: installed version vs. latest available, per app.
 - Install / Update via `PackageInstaller` with live download + install progress.

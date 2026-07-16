@@ -106,6 +106,17 @@
     <string name="import_failed">Import failed: %1$s</string>
     <string name="export_failed">Export failed: %1$s</string>
 
+    <string name="settings_auto_title">Automatic updates</string>
+    <string name="settings_auto_summary">Check your sources in the background and post a notification when updates are waiting. App Manager can\'t install silently (Android always shows its install prompt), so this notifies — one tap starts the updates.</string>
+    <string name="auto_off">Off</string>
+    <string name="auto_daily">Daily</string>
+    <string name="auto_weekly">Weekly</string>
+
+    <string name="updates_channel">Update checks</string>
+    <string name="updates_available_one">1 app update available</string>
+    <string name="updates_available_many">%1$d app updates available</string>
+    <string name="updates_notif_body">Tap to review, or Update all.</string>
+
     <string name="settings_theme_title">Theme</string>
     <string name="settings_save">Save</string>
     <string name="settings_saved">Saved</string>

@@ -1,13 +1,17 @@
 package com.appmanager
 
+import android.Manifest
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
+import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
@@ -27,6 +31,9 @@ class SettingsActivity : AppCompatActivity() {
         registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
             if (uri != null) readImport(uri)
         }
+
+    private val notifPermLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { /* best-effort */ }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         prefs = Prefs(this)
@@ -80,6 +87,11 @@ class SettingsActivity : AppCompatActivity() {
             Prefs.THEME_DARK -> binding.themeDark.isChecked = true
             else -> binding.themeSystem.isChecked = true
         }
+        when (prefs.autoUpdateMode) {
+            Prefs.AUTO_DAILY -> binding.autoDaily.isChecked = true
+            Prefs.AUTO_WEEKLY -> binding.autoWeekly.isChecked = true
+            else -> binding.autoOff.isChecked = true
+        }
     }
 
     private fun persist() {
@@ -92,6 +104,22 @@ class SettingsActivity : AppCompatActivity() {
             else -> Prefs.THEME_SYSTEM
         }
         ThemeManager.apply(prefs.themeMode)
+
+        prefs.autoUpdateMode = when (binding.autoGroup.checkedRadioButtonId) {
+            R.id.auto_daily -> Prefs.AUTO_DAILY
+            R.id.auto_weekly -> Prefs.AUTO_WEEKLY
+            else -> Prefs.AUTO_OFF
+        }
+        UpdateScheduler.apply(this, prefs.autoUpdateMode)
+        if (prefs.autoUpdateMode != Prefs.AUTO_OFF) requestNotifPermission()
+    }
+
+    private fun requestNotifPermission() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
+        val granted = ContextCompat.checkSelfPermission(
+            this, Manifest.permission.POST_NOTIFICATIONS
+        ) == PackageManager.PERMISSION_GRANTED
+        if (!granted) notifPermLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
     }
 
     private fun writeExport(uri: Uri) {

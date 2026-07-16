@@ -7,6 +7,11 @@ Store, no accounts, no analytics.
 
 > Package: `com.appmanager` · minSdk 26 (Android 8.0) · targetSdk 35
 
+**App Manager updates itself:** it always checks its own GitHub repo
+([`PortableDiag/AppManager`](https://github.com/PortableDiag/AppManager)), so it shows up in
+its own list and updates like any other app. Turn on **Settings → Automatic updates**
+(Daily / Weekly) to get a background check that notifies you when updates are waiting.
+
 Built to manage the other apps in this workspace (Lull, and friends). Install App Manager
 once, point it at your apps, and update them from your phone.
 

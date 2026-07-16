@@ -37,6 +37,7 @@ class MainActivity : AppCompatActivity() {
 
     private var allApps: List<ManagedApp> = emptyList()
     private var query: String = ""
+    private var pendingStartBatch = false
 
     private val updateQueue = ArrayDeque<String>()
     private var currentBatchPkg: String? = null
@@ -108,7 +109,24 @@ class MainActivity : AppCompatActivity() {
             ContextCompat.RECEIVER_NOT_EXPORTED
         )
 
+        UpdateScheduler.apply(this, prefs.autoUpdateMode)
+
         handleShareIntent(intent)
+        handleLaunchIntent(intent)
+    }
+
+    /** Notification actions: jump to the Updates filter, or kick off Update all. */
+    private fun handleLaunchIntent(intent: Intent?) {
+        if (intent == null) return
+        if (intent.getBooleanExtra(EXTRA_SHOW_UPDATES, false)) {
+            prefs.filterMode = FILTER_UPDATES
+            binding.filterChips.check(R.id.chip_updates)
+            intent.removeExtra(EXTRA_SHOW_UPDATES)
+        }
+        if (intent.getBooleanExtra(EXTRA_START_UPDATE_ALL, false)) {
+            pendingStartBatch = true
+            intent.removeExtra(EXTRA_START_UPDATE_ALL)
+        }
     }
 
     override fun onDestroy() {
@@ -120,6 +138,7 @@ class MainActivity : AppCompatActivity() {
         super.onNewIntent(intent)
         setIntent(intent)
         handleShareIntent(intent)
+        handleLaunchIntent(intent)
     }
 
     /** A URL shared from a browser (Share → App Manager) becomes a new source. */
@@ -132,6 +151,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onStart() {
         super.onStart()
+        Notifier.clear(this)
         // Don't reload mid-batch (each confirm dialog would trigger a network refresh).
         if (currentBatchPkg == null) refresh()
     }
@@ -356,6 +376,7 @@ class MainActivity : AppCompatActivity() {
                 Catalog.apps = apps
                 allApps = apps
                 applyView()
+                if (pendingStartBatch) { pendingStartBatch = false; startBatchUpdate() }
             } catch (e: Exception) {
                 toast(getString(R.string.refresh_failed, e.message ?: "error"))
             } finally {
@@ -478,6 +499,9 @@ class MainActivity : AppCompatActivity() {
     private fun toast(msg: String) = Toast.makeText(this, msg, Toast.LENGTH_LONG).show()
 
     companion object {
+        const val EXTRA_SHOW_UPDATES = "show_updates"
+        const val EXTRA_START_UPDATE_ALL = "start_update_all"
+
         private const val SORT_STATUS = 0
         private const val SORT_NAME = 1
         private const val SORT_RECENT = 2
