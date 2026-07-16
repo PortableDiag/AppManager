@@ -1,0 +1,23 @@
+{
+  "_comment": "App Manager repository index. Host this file plus the APKs somewhere your phone can reach (a static web server, a GitHub raw URL, an nginx folder, etc.), then paste this file's URL into App Manager > Settings > Repository URL. 'apk' may be an absolute URL or a path relative to this index. 'versionCode' MUST increase with every release so the manager can tell an update apart from what's installed.",
+  "apps": [
+    {
+      "package": "com.lull.player",
+      "label": "Lull",
+      "versionName": "1.4",
+      "versionCode": 5,
+      "apk": "lull-1.4.apk",
+      "description": "A dark-first music & white-noise player built around safe repeat-one looping.",
+      "changelog": "Crossfade + trim silence.",
+      "url": "https://github.com/you/lull"
+    },
+    {
+      "package": "com.appmanager",
+      "label": "App Manager",
+      "versionName": "1.0",
+      "versionCode": 1,
+      "apk": "appmanager-1.0.apk",
+      "changelog": "First release."
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "_comment": "Example of the file produced by Settings > Backup & restore > Export, and accepted by Import. Only the keys below are read; anything else (like this comment) is ignored. 'sources' takes one entry of any of three kinds: a github.com/owner/repo page (latest release APK resolved via the API — handles versioned/split asset names automatically), a direct .apk URL (must be a stable filename), or any other URL treated as a repo/index JSON. 'favoriteDevs' are bare GitHub usernames — every public repo of theirs that ships an APK release is added. 'localDir' blank = the app's private folder; a path needs all-files access. 'theme' is system | light | dark.",
+  "version": 1,
+  "sources": [
+    "github.com/you/lull",
+    "github.com/TeamNewPipe/NewPipe",
+    "https://example.com/repo/index.json",
+    "https://example.com/apks/audioplayer.apk"
+  ],
+  "favoriteDevs": [
+    "you",
+    "TeamNewPipe"
+  ],
+  "localDir": "",
+  "theme": "system"
+}

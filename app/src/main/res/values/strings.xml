@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">App Manager</string>
+
+    <string name="refresh">Refresh</string>
+    <string name="add_source">Add source</string>
+    <string name="settings">Settings</string>
+    <string name="search">Search</string>
+    <string name="search_hint">Search name or package</string>
+    <string name="sort">Sort</string>
+    <string name="sort_by">Sort by</string>
+    <string name="sort_status">Status</string>
+    <string name="sort_name">Name</string>
+    <string name="sort_recent">Recently updated</string>
+    <string name="filter_all">All</string>
+    <string name="filter_updates">Updates</string>
+    <string name="filter_installed">Installed</string>
+    <string name="filter_not_installed">Not installed</string>
+    <string name="no_matches_title">No matching apps</string>
+    <string name="no_matches_body">Try a different search or filter.</string>
+    <string name="update_all">Update all</string>
+    <string name="update_all_count">Update all (%1$d)</string>
+    <string name="updating_n_of_m">Updating %1$d of %2$d…</string>
+    <string name="nothing_to_update">Everything is up to date.</string>
+    <string name="batch_done">Updates finished.</string>
+    <string name="share_apk">Share APK</string>
+    <string name="preparing_share">Preparing APK…</string>
+    <string name="share_failed">Couldn\'t share APK: %1$s</string>
+
+    <string name="source_added">Added source: %1$s</string>
+    <string name="source_exists">Already a source: %1$s</string>
+    <string name="not_a_url">That doesn\'t look like a URL. Copy a repo or APK link first.</string>
+    <string name="paste_hint">Copy a GitHub repo, index, or .apk URL, then tap + to add it.</string>
+    <string name="theme">Theme</string>
+    <string name="theme_system">Follow system</string>
+    <string name="theme_light">Light</string>
+    <string name="theme_dark">Dark</string>
+
+    <string name="details">Details</string>
+    <string name="whats_new">What\'s new</string>
+    <string name="description">Description</string>
+    <string name="about_this_app">About</string>
+    <string name="open_homepage">Open page</string>
+    <string name="detail_package">Package</string>
+    <string name="detail_source">Source</string>
+    <string name="detail_latest">Latest version</string>
+    <string name="detail_installed">Installed version</string>
+    <string name="detail_min_sdk">Minimum Android</string>
+    <string name="detail_target_sdk">Target Android</string>
+    <string name="detail_size">Download size</string>
+    <string name="detail_installed_on">Installed on</string>
+    <string name="detail_updated_on">Updated on</string>
+    <string name="detail_last_used">Last used</string>
+    <string name="last_used_never">Not since install</string>
+    <string name="enable_usage_access">Enable usage access</string>
+    <string name="detail_not_installed">Not installed</string>
+    <string name="no_details">No description or release notes available for this app.</string>
+    <string name="sdk_api">API %1$d</string>
+
+    <string name="install">Install</string>
+    <string name="update">Update</string>
+    <string name="open">Open</string>
+    <string name="remove">Remove</string>
+    <string name="reinstall">Reinstall</string>
+
+    <string name="status_not_installed">Not installed</string>
+    <string name="status_installed">Installed %1$s</string>
+    <string name="status_up_to_date">Up to date · %1$s</string>
+    <string name="status_update_available">%1$s → %2$s</string>
+    <string name="latest_label">Latest %1$s</string>
+
+    <string name="empty_title">No apps in your catalog yet</string>
+    <string name="empty_body">Tap + to add a link you\'ve copied (a GitHub repo, index, or .apk URL), or Share a repo link into App Manager. You can also add sources in Settings, or drop APKs in the local folder. Then pull to refresh.</string>
+
+    <string name="loading">Loading catalog…</string>
+    <string name="downloading">Downloading %1$s…</string>
+    <string name="downloading_pct">Downloading %1$d%%</string>
+    <string name="installing">Installing…</string>
+    <string name="install_done">%1$s installed</string>
+    <string name="install_failed">Install failed: %1$s</string>
+    <string name="refresh_failed">Couldn\'t load catalog: %1$s</string>
+    <string name="need_install_permission">Allow App Manager to install apps, then try again.</string>
+
+    <!-- Settings -->
+    <string name="settings_repo_title">App sources</string>
+    <string name="settings_repo_hint">One URL per line</string>
+    <string name="settings_repo_summary">One URL per line. Fastest: paste a GitHub repo page (github.com/you/app) — the latest release APK is found automatically. A URL ending in .apk is a direct APK for one app; any other URL is treated as a repo/index JSON. Apps with no source here fall back to the local folder below.\n\nTip: from a browser you can Share a repo link straight into App Manager, or copy a link and tap + on the main screen.</string>
+    <string name="settings_local_title">Local APK folder</string>
+    <string name="settings_local_summary">Drop signed APKs in a folder and they\'re scanned automatically. Leave blank to use the app\'s private folder (no permission needed); set any path (e.g. /sdcard/MyApks) to use your own — that needs all-files access.</string>
+    <string name="settings_local_hint">Folder path (blank = private folder)</string>
+    <string name="settings_local_default">Blank uses: %1$s</string>
+    <string name="copy_default_path">Copy default path</string>
+    <string name="need_storage_access">Grant all-files access so App Manager can read your APK folder.</string>
+    <string name="settings_devs_title">Favorite GitHub devs</string>
+    <string name="settings_devs_summary">One GitHub username per line. Every public repo of theirs that ships an APK release is added automatically. Tip: Share or paste a github.com/username link to add one fast.</string>
+    <string name="settings_devs_hint">GitHub username (e.g. octocat)</string>
+    <string name="dev_added">Following %1$s — finding their apps…</string>
+    <string name="dev_exists">Already following %1$s</string>
+
+    <string name="settings_backup_title">Backup &amp; restore</string>
+    <string name="settings_backup_summary">Export all settings, sources, and favorite devs to a JSON file, or import one.</string>
+    <string name="export">Export…</string>
+    <string name="import_">Import…</string>
+    <string name="exported">Settings exported</string>
+    <string name="imported">Settings imported</string>
+    <string name="import_failed">Import failed: %1$s</string>
+    <string name="export_failed">Export failed: %1$s</string>
+
+    <string name="settings_theme_title">Theme</string>
+    <string name="settings_save">Save</string>
+    <string name="settings_saved">Saved</string>
+    <string name="copy_path">Copy path</string>
+    <string name="copied">Copied</string>
+</resources>
