@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Terminal palette — dark (90s hacker: neon green on black) -->
+    <color name="term_primary">#33FF77</color>
+    <color name="term_primary_dark">#00391B</color>
+    <color name="term_on_primary">#00210C</color>
+    <color name="term_primary_container">#00391B</color>
+    <color name="term_on_primary_container">#79FFA3</color>
+    <color name="term_secondary">#79C98F</color>
+    <color name="term_bg">#000300</color>
+    <color name="term_surface">#06120A</color>
+    <color name="term_surface_variant">#11241A</color>
+    <color name="term_on_surface">#4DFF85</color>
+    <color name="term_on_surface_variant">#37B45F</color>
+</resources>

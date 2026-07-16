@@ -129,6 +129,12 @@ object AppRepository {
                                     merge(candidates, it.withMeta(meta))
                                 }
                             }
+                        // A URL that *serves* an APK (e.g. telegram.org/dl/android/apk,
+                        // mindswarm.net links) even though it doesn't end in .apk.
+                        urlServesApk(url) ->
+                            fetchRemoteApk(context, url)?.let {
+                                merge(candidates, it.copy(sourceLabel = "Direct APK", homepage = url))
+                            }
                         else ->
                             for (c in fetchRemote(url)) merge(candidates, c)
                     }
@@ -218,6 +224,14 @@ object AppRepository {
             when {
                 code == HttpURLConnection.HTTP_NOT_MODIFIED && apkFile.exists() -> {
                     // unchanged — use the cached file
+                }
+                // Same size as the cached copy — assume unchanged and skip the (re)download.
+                // Covers servers that send no ETag/Last-Modified (e.g. Telegram's CDN).
+                code in 200..299 &&
+                    apkFile.exists() &&
+                    conn.contentLengthLong > 0 &&
+                    conn.contentLengthLong == apkFile.length() -> {
+                    // reuse cached file
                 }
                 code in 200..299 -> {
                     conn.inputStream.use { input ->
@@ -329,6 +343,34 @@ object AppRepository {
     fun normalizeUrl(url: String): String {
         val u = url.trim()
         return if (u.startsWith("http://") || u.startsWith("https://")) u else "https://$u"
+    }
+
+    /**
+     * True if [url] responds with an APK (by content-type, Content-Disposition filename, or
+     * the final redirected path) even if the URL itself doesn't end in .apk. Reads only the
+     * response headers — never the (possibly large) body.
+     */
+    private fun urlServesApk(url: String): Boolean {
+        return try {
+            val conn = (URL(url).openConnection() as HttpURLConnection).apply {
+                connectTimeout = 15000
+                readTimeout = 15000
+                instanceFollowRedirects = true
+                requestMethod = "GET"
+            }
+            try {
+                if (conn.responseCode !in 200..299) return false
+                val ct = (conn.contentType ?: "").lowercase()
+                if (ct.contains("vnd.android.package-archive")) return true
+                val disp = conn.getHeaderField("Content-Disposition") ?: ""
+                if (disp.contains(".apk", ignoreCase = true)) return true
+                conn.url.path.endsWith(".apk", ignoreCase = true)
+            } finally {
+                conn.disconnect()
+            }
+        } catch (_: Exception) {
+            false
+        }
     }
 
     /** A github.com/user/repo page (not already a direct asset or index). */

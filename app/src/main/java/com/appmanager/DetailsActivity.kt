@@ -70,6 +70,7 @@ class DetailsActivity : AppCompatActivity() {
         prefs = Prefs(this)
         ThemeManager.apply(prefs.themeMode)
         super.onCreate(savedInstanceState)
+        setTheme(ThemeManager.paletteTheme(prefs.palette))
         binding = ActivityDetailsBinding.inflate(layoutInflater)
         setContentView(binding.root)
 

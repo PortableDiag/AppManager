@@ -117,7 +117,11 @@
     <string name="updates_available_many">%1$d app updates available</string>
     <string name="updates_notif_body">Tap to review, or Update all.</string>
 
-    <string name="settings_theme_title">Theme</string>
+    <string name="settings_palette_title">Color theme</string>
+    <string name="palette_ocean">Ocean (blue/green)</string>
+    <string name="palette_terminal">Terminal (green mono)</string>
+
+    <string name="settings_theme_title">Light / dark</string>
     <string name="settings_save">Save</string>
     <string name="settings_saved">Saved</string>
     <string name="copy_path">Copy path</string>

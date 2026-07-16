@@ -13,4 +13,9 @@ object ThemeManager {
             }
         )
     }
+
+    /** The theme style for the chosen colour palette; applied per-activity before inflate. */
+    fun paletteTheme(palette: Int): Int =
+        if (palette == Prefs.PALETTE_TERMINAL) R.style.Theme_AppManager_Terminal
+        else R.style.Theme_AppManager
 }

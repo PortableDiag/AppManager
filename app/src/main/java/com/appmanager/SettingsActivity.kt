@@ -39,6 +39,7 @@ class SettingsActivity : AppCompatActivity() {
         prefs = Prefs(this)
         ThemeManager.apply(prefs.themeMode)
         super.onCreate(savedInstanceState)
+        setTheme(ThemeManager.paletteTheme(prefs.palette))
         binding = ActivitySettingsBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
@@ -87,6 +88,8 @@ class SettingsActivity : AppCompatActivity() {
             Prefs.THEME_DARK -> binding.themeDark.isChecked = true
             else -> binding.themeSystem.isChecked = true
         }
+        if (prefs.palette == Prefs.PALETTE_TERMINAL) binding.paletteTerminal.isChecked = true
+        else binding.paletteOcean.isChecked = true
         when (prefs.autoUpdateMode) {
             Prefs.AUTO_DAILY -> binding.autoDaily.isChecked = true
             Prefs.AUTO_WEEKLY -> binding.autoWeekly.isChecked = true
@@ -104,6 +107,9 @@ class SettingsActivity : AppCompatActivity() {
             else -> Prefs.THEME_SYSTEM
         }
         ThemeManager.apply(prefs.themeMode)
+
+        prefs.palette = if (binding.paletteGroup.checkedRadioButtonId == R.id.palette_terminal)
+            Prefs.PALETTE_TERMINAL else Prefs.PALETTE_OCEAN
 
         prefs.autoUpdateMode = when (binding.autoGroup.checkedRadioButtonId) {
             R.id.auto_daily -> Prefs.AUTO_DAILY

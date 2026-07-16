@@ -56,6 +56,11 @@ class Prefs(context: Context) {
         get() = sp.getInt(KEY_THEME, THEME_SYSTEM)
         set(value) = sp.edit().putInt(KEY_THEME, value).apply()
 
+    /** Colour palette: [PALETTE_OCEAN] (blue/green) or [PALETTE_TERMINAL] (green mono). */
+    var palette: Int
+        get() = sp.getInt(KEY_PALETTE, PALETTE_OCEAN)
+        set(value) = sp.edit().putInt(KEY_PALETTE, value).apply()
+
     /** List sort: 0 = status, 1 = name, 2 = recently updated. */
     var sortMode: Int
         get() = sp.getInt(KEY_SORT, 0)
@@ -79,6 +84,7 @@ class Prefs(context: Context) {
         o.put("favoriteDevs", JSONArray(favoriteDevs))
         o.put("localDir", localDir)
         o.put("theme", themeName(themeMode))
+        o.put("palette", if (palette == PALETTE_TERMINAL) "terminal" else "ocean")
         o.put("autoUpdate", autoUpdateMode)
         return o.toString(2)
     }
@@ -90,6 +96,8 @@ class Prefs(context: Context) {
         o.optJSONArray("favoriteDevs")?.let { favoriteDevs = it.toStringList() }
         if (o.has("localDir")) localDir = o.optString("localDir")
         if (o.has("theme")) themeMode = themeFromName(o.optString("theme"), themeMode)
+        if (o.has("palette")) palette =
+            if (o.optString("palette").equals("terminal", true)) PALETTE_TERMINAL else PALETTE_OCEAN
         if (o.has("autoUpdate")) autoUpdateMode = o.optInt("autoUpdate", autoUpdateMode)
     }
 
@@ -111,6 +119,7 @@ class Prefs(context: Context) {
 
     companion object {
         private const val KEY_REPO = "repo_url"
+        private const val KEY_PALETTE = "palette"
         private const val KEY_SOURCES = "sources"
         private const val KEY_DEVS = "favorite_devs"
         private const val KEY_LOCAL = "local_dir"
@@ -126,5 +135,8 @@ class Prefs(context: Context) {
         const val THEME_SYSTEM = 0
         const val THEME_LIGHT = 1
         const val THEME_DARK = 2
+
+        const val PALETTE_OCEAN = 0
+        const val PALETTE_TERMINAL = 1
     }
 }

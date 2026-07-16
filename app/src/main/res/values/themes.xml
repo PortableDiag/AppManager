@@ -19,4 +19,26 @@
         <item name="android:windowLightStatusBar">true</item>
         <item name="android:windowLightNavigationBar" tools:targetApi="o_mr1">true</item>
     </style>
+
+    <!-- 90s hacker / terminal: green mono; neon-on-black in dark, green-on-white in light. -->
+    <style name="Theme.AppManager.Terminal" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/term_primary</item>
+        <item name="colorOnPrimary">@color/term_on_primary</item>
+        <item name="colorPrimaryContainer">@color/term_primary_container</item>
+        <item name="colorOnPrimaryContainer">@color/term_on_primary_container</item>
+        <item name="colorSecondary">@color/term_secondary</item>
+        <item name="colorOnSecondary">@color/term_on_primary</item>
+
+        <item name="android:colorBackground">@color/term_bg</item>
+        <item name="colorSurface">@color/term_surface</item>
+        <item name="colorSurfaceVariant">@color/term_surface_variant</item>
+        <item name="colorOnSurface">@color/term_on_surface</item>
+        <item name="colorOnSurfaceVariant">@color/term_on_surface_variant</item>
+
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">?android:colorBackground</item>
+
+        <item name="fontFamily">monospace</item>
+        <item name="android:fontFamily">monospace</item>
+    </style>
 </resources>

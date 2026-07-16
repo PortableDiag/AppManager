@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.2
+- **Terminal theme:** a green monospace color theme (neon-on-black in dark, green-on-white
+  in light) alongside the default Ocean palette. Settings → Color theme.
+- **APK URLs that don't end in .apk:** sources like `telegram.org/dl/android/apk` or a
+  MindSwarm link now work — a URL is treated as a direct APK when it *serves* one (by
+  content-type, Content-Disposition filename, or the final redirected path), not just by a
+  .apk extension. Large downloads are skipped when the file size is unchanged, so a
+  no-ETag host isn't re-downloaded every check.
+
 ## 1.1
 - **Self-update:** App Manager always checks its own GitHub repo, so it appears in the list
   and updates itself like any other app.

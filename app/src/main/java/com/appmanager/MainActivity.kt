@@ -38,6 +38,7 @@ class MainActivity : AppCompatActivity() {
     private var allApps: List<ManagedApp> = emptyList()
     private var query: String = ""
     private var pendingStartBatch = false
+    private var themedPalette = Prefs.PALETTE_OCEAN
 
     private val updateQueue = ArrayDeque<String>()
     private var currentBatchPkg: String? = null
@@ -80,6 +81,8 @@ class MainActivity : AppCompatActivity() {
         prefs = Prefs(this)
         ThemeManager.apply(prefs.themeMode)
         super.onCreate(savedInstanceState)
+        setTheme(ThemeManager.paletteTheme(prefs.palette))
+        themedPalette = prefs.palette
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
@@ -151,6 +154,8 @@ class MainActivity : AppCompatActivity() {
 
     override fun onStart() {
         super.onStart()
+        // A palette change in Settings takes effect by recreating with the new theme.
+        if (prefs.palette != themedPalette) { recreate(); return }
         Notifier.clear(this)
         // Don't reload mid-batch (each confirm dialog would trigger a network refresh).
         if (currentBatchPkg == null) refresh()

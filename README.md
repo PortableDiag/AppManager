@@ -36,6 +36,8 @@ once, point it at your apps, and update them from your phone.
 - **Search, sort & filter** — search by name/package, sort by status / name / recently
   updated, and filter with chips (All · Updates · Installed · Not installed). Your sort and
   filter choices are remembered.
+- **Two color themes** — Ocean (blue/green) and Terminal (green monospace), each in light
+  and dark. Settings → Color theme.
 - **Pull to refresh** re-reads the catalog and re-checks what's installed.
 - **Blue→green theme** shared with the other apps, light / dark / follow-system.
 
@@ -82,7 +84,10 @@ Each source line is one of three kinds:
   fixed asset-name requirement. (Public repos; per-ABI split releases resolve to the
   universal APK when present.)
 - **A direct `.apk` URL** — fetched, version-read from the file, and cached via
-  `Last-Modified`/`ETag` so it only re-downloads when it changes.
+  `Last-Modified`/`ETag` (or unchanged file size) so it only re-downloads when it changes.
+  A URL that *serves* an APK but doesn't end in `.apk` (e.g. `telegram.org/dl/android/apk`,
+  or a MindSwarm download link) also works — it's detected by content-type / attachment
+  filename / final redirected path.
 - **Any other URL** — treated as a repo/index JSON listing several apps.
 
 Details on the last two:
