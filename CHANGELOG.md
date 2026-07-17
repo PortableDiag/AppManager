@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.3
+- **Faster, streaming startup:** sources are now fetched in parallel instead of one after
+  another, and apps appear in the list **as each source resolves** rather than only after
+  everything finishes. Local and cached apps show almost immediately; slow network sources
+  (large direct APKs, big dev accounts) fill in as they arrive.
+
 ## 1.2
 - **Terminal theme:** a green monospace color theme (neon-on-black in dark, green-on-white
   in light) alongside the default Ocean palette. Settings → Color theme.

@@ -6,6 +6,12 @@ import android.graphics.drawable.Drawable
 import android.os.Build
 import androidx.core.content.pm.PackageInfoCompat
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.joinAll
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
@@ -97,89 +103,99 @@ object AppRepository {
         context: Context,
         sources: List<String>,
         favoriteDevs: List<String>,
-        localDir: String
-    ): List<ManagedApp> =
-        withContext(Dispatchers.IO) {
-            val pm = context.packageManager
-            val candidates = HashMap<String, Candidate>()
+        localDir: String,
+        onPartial: (suspend (List<ManagedApp>) -> Unit)? = null
+    ): List<ManagedApp> = coroutineScope {
+        val pm = context.packageManager
+        val candidates = HashMap<String, Candidate>()
+        val mutex = Mutex()
 
-            // Favorite devs: every public repo of theirs that ships an APK release.
-            for (dev in favoriteDevs) {
-                try {
-                    for (meta in discoverDevMeta(context, normalizeDev(dev))) {
-                        fetchRemoteApk(context, meta.apkUrl)?.let { merge(candidates, it.withMeta(meta)) }
-                    }
-                } catch (_: Exception) {
-                }
+        // Merge a source's results and push a fresh snapshot to the UI as it arrives.
+        suspend fun contribute(found: List<Candidate>) {
+            if (found.isEmpty()) return
+            val snapshot = mutex.withLock {
+                found.forEach { merge(candidates, it) }
+                buildCatalog(pm, candidates)
             }
-
-            for (raw in sources) {
-                val url = normalizeUrl(raw)
-                try {
-                    when {
-                        url.endsWith(".apk", ignoreCase = true) ->
-                            fetchRemoteApk(context, url)?.let {
-                                merge(candidates, it.copy(
-                                    sourceLabel = "Direct APK", homepage = url
-                                ))
-                            }
-                        isGitHubRepoUrl(url) ->
-                            resolveGitHubApk(url)?.let { meta ->
-                                fetchRemoteApk(context, meta.apkUrl)?.let {
-                                    merge(candidates, it.withMeta(meta))
-                                }
-                            }
-                        // A URL that *serves* an APK (e.g. telegram.org/dl/android/apk,
-                        // mindswarm.net links) even though it doesn't end in .apk.
-                        urlServesApk(url) ->
-                            fetchRemoteApk(context, url)?.let {
-                                merge(candidates, it.copy(sourceLabel = "Direct APK", homepage = url))
-                            }
-                        else ->
-                            for (c in fetchRemote(url)) merge(candidates, c)
-                    }
-                } catch (_: Exception) {
-                    // A single unreachable/invalid source shouldn't sink the whole refresh.
-                }
-            }
-
-            // Always check App Manager's own repo so it can self-update, unless the user
-            // already listed it as a source (avoids a duplicate API call).
-            if (sources.none { it.contains("PortableDiag/AppManager", true) }) {
-                try {
-                    resolveGitHubApk(SELF_REPO)?.let { meta ->
-                        fetchRemoteApk(context, meta.apkUrl)?.let { merge(candidates, it.withMeta(meta)) }
-                    }
-                } catch (_: Exception) {}
-            }
-
-            // Local APKs fill in / override only where they're newer.
-            for (c in scanLocal(context, resolveLocalDir(context, localDir))) {
-                merge(candidates, c)
-            }
-
-            candidates.values.map { c ->
-                val installed = installedInfo(pm, c.packageName)
-                ManagedApp(
-                    packageName = c.packageName,
-                    label = c.label,
-                    availableVersionName = c.versionName,
-                    availableVersionCode = c.versionCode,
-                    source = c.source,
-                    installedVersionName = installed?.first,
-                    installedVersionCode = installed?.second ?: -1L,
-                    icon = iconFor(pm, c),
-                    description = c.description,
-                    changelog = c.changelog,
-                    sourceLabel = c.sourceLabel,
-                    homepage = c.homepage
-                )
-            }.sortedWith(
-                compareByDescending<ManagedApp> { it.hasUpdate }
-                    .thenByDescending { it.canInstall }
-                    .thenBy { it.label.lowercase() }
-            )
+            onPartial?.let { withContext(Dispatchers.Main) { it(snapshot) } }
         }
+
+        val jobs = ArrayList<Job>()
+
+        // Local scan is offline and fast — it lands first.
+        jobs += launch(Dispatchers.IO) {
+            runCatching { contribute(scanLocal(context, resolveLocalDir(context, localDir))) }
+        }
+
+        // Favorite devs.
+        for (dev in favoriteDevs) jobs += launch(Dispatchers.IO) {
+            runCatching {
+                val cands = discoverDevMeta(context, normalizeDev(dev)).mapNotNull { meta ->
+                    fetchRemoteApk(context, meta.apkUrl)?.withMeta(meta)
+                }
+                contribute(cands)
+            }
+        }
+
+        // Each source in parallel.
+        for (raw in sources) jobs += launch(Dispatchers.IO) {
+            val url = normalizeUrl(raw)
+            runCatching {
+                val cands: List<Candidate> = when {
+                    url.endsWith(".apk", ignoreCase = true) ->
+                        listOfNotNull(fetchRemoteApk(context, url)
+                            ?.copy(sourceLabel = "Direct APK", homepage = url))
+                    isGitHubRepoUrl(url) ->
+                        resolveGitHubApk(url)?.let { meta ->
+                            fetchRemoteApk(context, meta.apkUrl)?.withMeta(meta)
+                        }.let { listOfNotNull(it) }
+                    urlServesApk(url) ->
+                        listOfNotNull(fetchRemoteApk(context, url)
+                            ?.copy(sourceLabel = "Direct APK", homepage = url))
+                    else -> fetchRemote(url)
+                }
+                contribute(cands)
+            }
+        }
+
+        // App Manager's own repo (self-update), unless already listed as a source.
+        if (sources.none { it.contains("PortableDiag/AppManager", true) }) {
+            jobs += launch(Dispatchers.IO) {
+                runCatching {
+                    resolveGitHubApk(SELF_REPO)?.let { meta ->
+                        fetchRemoteApk(context, meta.apkUrl)?.withMeta(meta)
+                    }?.let { contribute(listOf(it)) }
+                }
+            }
+        }
+
+        jobs.joinAll()
+        mutex.withLock { buildCatalog(pm, candidates) }
+    }
+
+    /** Turn the merged candidates into installed-annotated, sorted [ManagedApp]s. */
+    private fun buildCatalog(pm: PackageManager, candidates: Map<String, Candidate>): List<ManagedApp> =
+        candidates.values.map { c ->
+            val installed = installedInfo(pm, c.packageName)
+            ManagedApp(
+                packageName = c.packageName,
+                label = c.label,
+                availableVersionName = c.versionName,
+                availableVersionCode = c.versionCode,
+                source = c.source,
+                installedVersionName = installed?.first,
+                installedVersionCode = installed?.second ?: -1L,
+                icon = iconFor(pm, c),
+                description = c.description,
+                changelog = c.changelog,
+                sourceLabel = c.sourceLabel,
+                homepage = c.homepage
+            )
+        }.sortedWith(
+            compareByDescending<ManagedApp> { it.hasUpdate }
+                .thenByDescending { it.canInstall }
+                .thenBy { it.label.lowercase() }
+        )
 
     private fun Candidate.withMeta(m: RemoteMeta) = copy(
         description = m.description ?: description,

@@ -242,7 +242,8 @@ class MainActivity : AppCompatActivity() {
         adapter.submitList(sortApps(filtered))
         invalidateOptionsMenu()
 
-        val show = filtered.isEmpty()
+        // While a load is still streaming in, don't flash "no apps" on an empty list.
+        val show = filtered.isEmpty() && (allApps.isNotEmpty() || !binding.swipe.isRefreshing)
         binding.empty.visibility = if (show) View.VISIBLE else View.GONE
         if (show) {
             if (allApps.isEmpty()) {
@@ -377,7 +378,12 @@ class MainActivity : AppCompatActivity() {
             try {
                 val apps = AppRepository.load(
                     applicationContext, prefs.sources, prefs.favoriteDevs, prefs.localDir
-                )
+                ) { partial ->
+                    // Stream results into the list as each source resolves.
+                    allApps = partial
+                    Catalog.apps = partial
+                    applyView()
+                }
                 Catalog.apps = apps
                 allApps = apps
                 applyView()
@@ -386,6 +392,7 @@ class MainActivity : AppCompatActivity() {
                 toast(getString(R.string.refresh_failed, e.message ?: "error"))
             } finally {
                 binding.swipe.isRefreshing = false
+                applyView()
             }
         }
     }
