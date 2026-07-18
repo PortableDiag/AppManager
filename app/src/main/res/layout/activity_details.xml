@@ -118,6 +118,28 @@
                     android:text="@string/install" />
             </LinearLayout>
 
+            <!-- Auto-update (installed apps with a source only) -->
+            <com.google.android.material.materialswitch.MaterialSwitch
+                android:id="@+id/switch_auto_update"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp"
+                android:paddingVertical="4dp"
+                android:text="@string/auto_update_app"
+                android:textAppearance="@style/TextAppearance.Material3.BodyLarge"
+                android:textColor="?attr/colorOnSurface"
+                android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/auto_update_hint"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:text="@string/auto_update_app_summary"
+                android:textAppearance="@style/TextAppearance.Material3.BodySmall"
+                android:textColor="?attr/colorOnSurfaceVariant"
+                android:visibility="gone" />
+
             <!-- What's new -->
             <LinearLayout
                 android:id="@+id/section_whatsnew"

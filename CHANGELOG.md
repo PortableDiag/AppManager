@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.5
+- **Per-app auto-update:** each app's details screen has an **Auto-update this app** switch,
+  off by default. When the background check finds a new version of an opted-in app, it
+  installs it automatically — **silently** for apps App Manager installed (Android 12+), or
+  with a one-tap "update ready" notification for apps the OS won't let it update silently.
+  Apps you don't opt in still just notify, as before. The setting is included in
+  export/import config (`autoUpdateApps`).
+
 ## 1.4
 - **Import official config:** a new button in Settings → Backup & restore downloads the
   recommended sources and favorite devs published in the App Manager repo and applies them

@@ -163,6 +163,20 @@ class DetailsActivity : AppCompatActivity() {
         }
 
         bindActions(a)
+        bindAutoUpdate(a)
+    }
+
+    private fun bindAutoUpdate(a: ManagedApp) {
+        // Only meaningful for an installed app that has a source to update from.
+        val show = a.installed && a.source != null
+        binding.switchAutoUpdate.visibility = if (show) View.VISIBLE else View.GONE
+        binding.autoUpdateHint.visibility = if (show) View.VISIBLE else View.GONE
+        if (!show) return
+        binding.switchAutoUpdate.setOnCheckedChangeListener(null)
+        binding.switchAutoUpdate.isChecked = prefs.isAutoUpdate(a.packageName)
+        binding.switchAutoUpdate.setOnCheckedChangeListener { _, checked ->
+            prefs.setAutoUpdate(a.packageName, checked)
+        }
     }
 
     private fun setSection(section: View, body: android.widget.TextView, text: String?) {

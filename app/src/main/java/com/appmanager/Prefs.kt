@@ -76,6 +76,24 @@ class Prefs(context: Context) {
         get() = sp.getInt(KEY_AUTO, AUTO_OFF)
         set(value) = sp.edit().putInt(KEY_AUTO, value).apply()
 
+    /**
+     * Packages the user opted in to auto-install when the background check finds an update.
+     * Disabled by default: a package is auto-updated only if it appears in this set.
+     */
+    var autoUpdateApps: Set<String>
+        get() = sp.getString(KEY_AUTO_APPS, "")!!
+            .split("\n").map { it.trim() }.filter { it.isNotBlank() }.toSet()
+        set(value) = sp.edit()
+            .putString(KEY_AUTO_APPS, value.map { it.trim() }.filter { it.isNotBlank() }.joinToString("\n"))
+            .apply()
+
+    fun isAutoUpdate(pkg: String): Boolean = pkg in autoUpdateApps
+
+    fun setAutoUpdate(pkg: String, enabled: Boolean) {
+        val cur = autoUpdateApps
+        autoUpdateApps = if (enabled) cur + pkg else cur - pkg
+    }
+
     /** Serialize all settings to portable JSON. */
     fun exportJson(): String {
         val o = JSONObject()
@@ -86,6 +104,7 @@ class Prefs(context: Context) {
         o.put("theme", themeName(themeMode))
         o.put("palette", if (palette == PALETTE_TERMINAL) "terminal" else "ocean")
         o.put("autoUpdate", autoUpdateMode)
+        o.put("autoUpdateApps", JSONArray(autoUpdateApps.toList()))
         return o.toString(2)
     }
 
@@ -99,6 +118,7 @@ class Prefs(context: Context) {
         if (o.has("palette")) palette =
             if (o.optString("palette").equals("terminal", true)) PALETTE_TERMINAL else PALETTE_OCEAN
         if (o.has("autoUpdate")) autoUpdateMode = o.optInt("autoUpdate", autoUpdateMode)
+        o.optJSONArray("autoUpdateApps")?.let { autoUpdateApps = it.toStringList().toSet() }
     }
 
     private fun JSONArray.toStringList(): List<String> =
@@ -126,6 +146,7 @@ class Prefs(context: Context) {
         private const val KEY_SORT = "sort_mode"
         private const val KEY_FILTER = "filter_mode"
         private const val KEY_AUTO = "auto_update_mode"
+        private const val KEY_AUTO_APPS = "auto_update_apps"
 
         const val AUTO_OFF = 0
         const val AUTO_DAILY = 1

@@ -57,6 +57,34 @@ object Notifier {
         }
     }
 
+    /**
+     * A per-app notification whose tap launches the system install confirmation. Used when a
+     * background auto-update can't run silently (the app wasn't installed by App Manager) and
+     * so still needs one tap from the user.
+     */
+    fun showInstallAction(context: Context, pkg: String?, label: String, confirm: Intent) {
+        ensureChannel(context)
+        val flags = PendingIntent.FLAG_UPDATE_CURRENT or
+            (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) PendingIntent.FLAG_IMMUTABLE else 0)
+        val pi = PendingIntent.getActivity(context, (pkg ?: label).hashCode(), confirm, flags)
+
+        val notif = NotificationCompat.Builder(context, CHANNEL)
+            .setSmallIcon(R.drawable.ic_stat_update)
+            .setContentTitle(context.getString(R.string.update_ready_title, label))
+            .setContentText(context.getString(R.string.update_ready_text))
+            .setContentIntent(pi)
+            .setAutoCancel(true)
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .build()
+
+        try {
+            NotificationManagerCompat.from(context).notify(installActionId(pkg ?: label), notif)
+        } catch (_: SecurityException) {
+        }
+    }
+
+    private fun installActionId(key: String): Int = 2000 + (key.hashCode() and 0xFFFF)
+
     fun clear(context: Context) {
         NotificationManagerCompat.from(context).cancel(NOTIF_ID)
     }

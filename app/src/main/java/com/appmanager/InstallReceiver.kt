@@ -18,6 +18,8 @@ class InstallReceiver : BroadcastReceiver() {
         )
         val pkg = intent.getStringExtra(Installer.EXTRA_APP_PKG)
             ?: intent.getStringExtra(PackageInstaller.EXTRA_PACKAGE_NAME)
+        val label = intent.getStringExtra(Installer.EXTRA_APP_LABEL) ?: pkg ?: "?"
+        val background = intent.getBooleanExtra(Installer.EXTRA_BACKGROUND, false)
 
         when (status) {
             PackageInstaller.STATUS_PENDING_USER_ACTION -> {
@@ -25,7 +27,13 @@ class InstallReceiver : BroadcastReceiver() {
                 val confirm = intent.getParcelableExtra<Intent>(Intent.EXTRA_INTENT)
                 if (confirm != null) {
                     confirm.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    context.startActivity(confirm)
+                    if (background) {
+                        // No foreground activity to host the dialog — offer it as a
+                        // tap-to-confirm notification instead.
+                        Notifier.showInstallAction(context, pkg, label, confirm)
+                    } else {
+                        context.startActivity(confirm)
+                    }
                 }
             }
             PackageInstaller.STATUS_SUCCESS -> {

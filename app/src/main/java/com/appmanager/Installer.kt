@@ -25,6 +25,8 @@ object Installer {
 
     const val ACTION_SESSION_CALLBACK = "com.appmanager.SESSION_CALLBACK"
     const val EXTRA_APP_PKG = "app_pkg"
+    const val EXTRA_APP_LABEL = "app_label"
+    const val EXTRA_BACKGROUND = "background"
 
     /** Download [url] to the cache, reporting 0..100 progress (or -1 when unknown). */
     suspend fun download(context: Context, url: String, onProgress: (Int) -> Unit): File =
@@ -64,14 +66,28 @@ object Installer {
             out
         }
 
-    /** Stream [apk] into a PackageInstaller session and commit it. */
-    suspend fun install(context: Context, apk: File, packageName: String) =
+    /**
+     * Stream [apk] into a PackageInstaller session and commit it. When [background] is set
+     * (an unattended auto-update), on Android 12+ we ask the system not to require user
+     * action — this succeeds silently only for apps this app is the installer of record for;
+     * otherwise the system still reports STATUS_PENDING_USER_ACTION and we notify instead.
+     */
+    suspend fun install(
+        context: Context,
+        apk: File,
+        packageName: String,
+        label: String = packageName,
+        background: Boolean = false
+    ) =
         withContext(Dispatchers.IO) {
             val pi = context.packageManager.packageInstaller
             val params = PackageInstaller.SessionParams(
                 PackageInstaller.SessionParams.MODE_FULL_INSTALL
             ).apply {
                 setAppPackageName(packageName)
+                if (background && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    setRequireUserAction(PackageInstaller.SessionParams.USER_ACTION_NOT_REQUIRED)
+                }
             }
             val sessionId = pi.createSession(params)
             val session = pi.openSession(sessionId)
@@ -83,6 +99,8 @@ object Installer {
                 val intent = Intent(context, InstallReceiver::class.java).apply {
                     action = ACTION_SESSION_CALLBACK
                     putExtra(EXTRA_APP_PKG, packageName)
+                    putExtra(EXTRA_APP_LABEL, label)
+                    putExtra(EXTRA_BACKGROUND, background)
                 }
                 var flags = PendingIntent.FLAG_UPDATE_CURRENT
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {

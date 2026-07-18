@@ -111,15 +111,20 @@
     <string name="import_official_done">Official config imported and applied</string>
 
     <string name="settings_auto_title">Automatic updates</string>
-    <string name="settings_auto_summary">Check your sources in the background and post a notification when updates are waiting. App Manager can\'t install silently (Android always shows its install prompt), so this notifies — one tap starts the updates.</string>
+    <string name="settings_auto_summary">Check your sources in the background and post a notification when updates are waiting. Apps you turn on Auto-update for are installed automatically — silently for apps App Manager installed (Android 12+), or with one tap for the rest. Everything else just notifies.</string>
     <string name="auto_off">Off</string>
     <string name="auto_daily">Daily</string>
     <string name="auto_weekly">Weekly</string>
+
+    <string name="auto_update_app">Auto-update this app</string>
+    <string name="auto_update_app_summary">When a background check finds a new version, install it automatically. Runs silently only for apps App Manager installed (Android 12+); otherwise it posts a one-tap install notification. Off by default.</string>
 
     <string name="updates_channel">Update checks</string>
     <string name="updates_available_one">1 app update available</string>
     <string name="updates_available_many">%1$d app updates available</string>
     <string name="updates_notif_body">Tap to review, or Update all.</string>
+    <string name="update_ready_title">%1$s update ready</string>
+    <string name="update_ready_text">Tap to install the update</string>
 
     <string name="settings_palette_title">Color theme</string>
     <string name="palette_ocean">Ocean (blue/green)</string>
