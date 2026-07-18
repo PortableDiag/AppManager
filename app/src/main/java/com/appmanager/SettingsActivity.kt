@@ -15,9 +15,18 @@ import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
+import androidx.lifecycle.lifecycleScope
 import com.appmanager.databinding.ActivitySettingsBinding
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class SettingsActivity : AppCompatActivity() {
+
+    private companion object {
+        const val OFFICIAL_CONFIG_URL =
+            "https://raw.githubusercontent.com/PortableDiag/AppManager/main/official-config.json"
+    }
 
     private lateinit var binding: ActivitySettingsBinding
     private lateinit var prefs: Prefs
@@ -71,6 +80,7 @@ class SettingsActivity : AppCompatActivity() {
         binding.btnImport.setOnClickListener {
             importLauncher.launch(arrayOf("application/json", "text/*", "*/*"))
         }
+        binding.btnImportOfficial.setOnClickListener { importOfficialConfig() }
 
         binding.btnSave.setOnClickListener {
             persist()
@@ -138,6 +148,31 @@ class SettingsActivity : AppCompatActivity() {
             Toast.makeText(
                 this, getString(R.string.export_failed, e.message ?: "error"), Toast.LENGTH_LONG
             ).show()
+        }
+    }
+
+    /** Download the repo's published config and apply it through the normal import path. */
+    private fun importOfficialConfig() {
+        binding.btnImportOfficial.isEnabled = false
+        Toast.makeText(this, R.string.importing_official, Toast.LENGTH_SHORT).show()
+        lifecycleScope.launch {
+            try {
+                val text = withContext(Dispatchers.IO) { AppRepository.fetchText(OFFICIAL_CONFIG_URL) }
+                prefs.importJson(text)
+                bindFromPrefs()
+                ThemeManager.apply(prefs.themeMode)
+                Toast.makeText(
+                    this@SettingsActivity, R.string.import_official_done, Toast.LENGTH_SHORT
+                ).show()
+            } catch (e: Exception) {
+                Toast.makeText(
+                    this@SettingsActivity,
+                    getString(R.string.import_failed, e.message ?: "error"),
+                    Toast.LENGTH_LONG
+                ).show()
+            } finally {
+                binding.btnImportOfficial.isEnabled = true
+            }
         }
     }
 

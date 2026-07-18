@@ -102,9 +102,13 @@
     <string name="export">Export…</string>
     <string name="import_">Import…</string>
     <string name="exported">Settings exported</string>
-    <string name="imported">Settings imported</string>
+    <string name="imported">Settings imported and applied</string>
     <string name="import_failed">Import failed: %1$s</string>
     <string name="export_failed">Export failed: %1$s</string>
+    <string name="import_official">Import official config</string>
+    <string name="import_official_summary">Download and apply the recommended sources and settings from the App Manager repo. Replaces your current sources.</string>
+    <string name="importing_official">Downloading official config…</string>
+    <string name="import_official_done">Official config imported and applied</string>
 
     <string name="settings_auto_title">Automatic updates</string>
     <string name="settings_auto_summary">Check your sources in the background and post a notification when updates are waiting. App Manager can\'t install silently (Android always shows its install prompt), so this notifies — one tap starts the updates.</string>

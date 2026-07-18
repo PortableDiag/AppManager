@@ -1,0 +1,17 @@
+{
+  "_comment": "Official App Manager config. Served raw from the repo and pulled by Settings > Backup & restore > Import official config. Same schema as an Export file: only the keys below are read, anything else is ignored. Edit this to change the recommended sources/devs shipped to users.",
+  "version": 1,
+  "sources": [
+    "https://github.com/NeoApplications/Neo-Backup",
+    "https://github.com/ukanth/afwall",
+    "https://github.com/K1rakishou/Kuroba-Experimental/",
+    "https://github.com/AdAway/AdAway",
+    "https://github.com/chiehmin/MinMinGuard",
+    "https://telegram.org/dl/android/apk",
+    "https://github.com/topjohnwu/Magisk"
+  ],
+  "favoriteDevs": [
+    "PortableDiag",
+    "TeamNewPipe"
+  ]
+}

@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.4
+- **Import official config:** a new button in Settings → Backup & restore downloads the
+  recommended sources and favorite devs published in the App Manager repo and applies them
+  in one tap. It reuses the normal import path, so the settings take effect immediately —
+  no need to press Save. Replaces the current sources.
+- Import toasts now say settings are **imported and applied** so it's clear no Save is
+  required.
+
 ## 1.3
 - **Faster, streaming startup:** sources are now fetched in parallel instead of one after
   another, and apps appear in the list **as each source resolves** rather than only after

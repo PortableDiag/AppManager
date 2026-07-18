@@ -652,6 +652,9 @@ object AppRepository {
         }
     }
 
+    /** Blocking GET returning the response body as text. Call from a background dispatcher. */
+    fun fetchText(urlStr: String): String = httpGet(urlStr)
+
     private fun httpGet(urlStr: String): String {
         val conn = (URL(urlStr).openConnection() as HttpURLConnection).apply {
             connectTimeout = 15000
