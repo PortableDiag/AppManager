@@ -10,7 +10,9 @@ Store, no accounts, no analytics.
 **App Manager updates itself:** it always checks its own GitHub repo
 ([`PortableDiag/AppManager`](https://github.com/PortableDiag/AppManager)), so it shows up in
 its own list and updates like any other app. Turn on **Settings → Automatic updates**
-(Daily / Weekly) to get a background check that notifies you when updates are waiting.
+(Daily / Weekly) to get a background check that notifies you when updates are waiting — and
+flip **Auto-update this app** on any app's details page to have that one installed for you.
+See [Automatic updates](#automatic-updates).
 
 Built to manage the other apps in this workspace (Lull, and friends). Install App Manager
 once, point it at your apps, and update them from your phone.
@@ -30,6 +32,9 @@ once, point it at your apps, and update them from your phone.
   Usage-access permission; the row links to the settings toggle until you grant it.)
 - **Update all** — one action installs every pending update in turn (each still shows
   Android's per-app install confirmation, since App Manager isn't a privileged installer).
+- **Automatic updates** — an optional background check that notifies you when updates are
+  waiting, plus a per-app **Auto-update this app** switch that installs them for you. See
+  [Automatic updates](#automatic-updates).
 - **Install / Update** streams the APK through Android's `PackageInstaller` (the same
   session API the Play Store uses) with a live download + install progress bar.
 - **Open** launches an installed app; **Remove** hands off to the system uninstall dialog.
@@ -196,6 +201,47 @@ adb push app/build/outputs/apk/release/app-release.apk /sdcard/MyApks/
 
 ---
 
+## Automatic updates
+
+Off by default. Two layers, and you need the first for the second to do anything.
+
+### 1. The background check — Settings → Automatic updates
+
+**Off · Daily · Weekly.** When on, App Manager re-reads your sources in the background and
+posts a notification listing what's waiting, with an **Update all** action. That's all it
+does on its own: it tells you, you tap.
+
+### 2. Per-app auto-install — the switch on an app's details page
+
+**Auto-update this app** (off by default, per app) tells the background check to actually
+install that app's updates instead of only mentioning them. What happens then depends on
+whether App Manager is the app's installer:
+
+| Situation | Result |
+|---|---|
+| App Manager installed the app, Android 12+ | Installs **silently** — nothing to tap |
+| Anything else (installed by another store, sideloaded by hand, Android 11 or older) | Posts an **"update ready"** notification; one tap runs the normal install prompt |
+
+Turning the switch on schedules a **daily** check if automatic updates were Off, and says so
+— the switch is useless without one, so it stops being a no-op switch.
+
+**On mobile data, opted-in apps are not auto-installed** — an APK is a big download, so they
+fall back to notifying you and install once you're on Wi-Fi. The check itself still runs
+anywhere.
+
+**Failures are reported.** If an update can't install — a signature mismatch, no space, a bad
+APK — you get a notification naming the app and the reason, rather than it quietly never
+happening. Backing out of an install prompt yourself isn't treated as a failure.
+
+> Silent installs need `UPDATE_PACKAGES_WITHOUT_USER_ACTION` (a normal-level permission,
+> granted at install with no prompt) and only ever apply to apps App Manager installed
+> itself. It can't silently update anything else — Android doesn't allow it, and neither can
+> any non-privileged installer.
+
+Your per-app choices are included in **Backup & restore** as `autoUpdateApps`.
+
+---
+
 ## Building
 
 Same toolchain as the other apps here (Gradle wrapper, Java 17, SDK at
@@ -235,8 +281,12 @@ standard Android sideload prompt — no root, no special privileges.
 |---|---|
 | `AppRepository` | Merges the remote index + local APK folder, then checks each package against what's installed via `PackageManager`. |
 | `Installer` | Downloads the APK and drives a `PackageInstaller` session; also fires the uninstall intent. |
-| `InstallReceiver` | Catches the session callback — launches the confirm dialog, then reports success/failure. |
+| `InstallReceiver` | Catches the session callback — launches the confirm dialog, then reports success/failure (including failed background installs). |
 | `MainActivity` | The list, refresh, progress, and permission flow. |
-| `SettingsActivity` | Repository URL, local-folder path, theme. |
+| `DetailsActivity` | The per-app page, Share APK, and the per-app auto-update switch. |
+| `SettingsActivity` | Repository URL, local-folder path, theme, backup/restore. |
+| `UpdateScheduler` / `UpdateWorker` | Schedules the periodic check and runs it: reload the catalog, auto-install opted-in apps, notify about the rest. |
+| `Notifier` | The updates-waiting, update-ready, and update-failed notifications. |
 
-No ads, no analytics, no background services. It only does something when you tap.
+No ads, no analytics, no tracking. The only background work is the update check you asked
+for in Settings — with it Off, App Manager does nothing until you tap.

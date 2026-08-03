@@ -24,6 +24,9 @@
   on a daily check (and says so) if none was scheduled.
 - Staged APKs left in the cache are swept after a day instead of accumulating with every
   update.
+- The README now documents automatic updates properly — the background check, the per-app
+  switch, when an install is silent vs. one-tap, and the mobile-data behavior. Per-app
+  auto-update had shipped in 1.5 without ever being mentioned there.
 
 ## 1.5
 - **Per-app auto-update:** each app's details screen has an **Auto-update this app** switch,
