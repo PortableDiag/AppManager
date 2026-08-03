@@ -83,10 +83,56 @@ object Notifier {
         }
     }
 
+    /**
+     * A background auto-update that failed outright. Nothing is listening for the install
+     * broadcast when no activity is running, so without this the failure is invisible and
+     * silently repeats on every check.
+     */
+    fun showInstallFailed(context: Context, pkg: String?, label: String, message: String?) {
+        ensureChannel(context)
+        val key = pkg ?: label
+        val openIntent = Intent(context, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            putExtra(MainActivity.EXTRA_SHOW_UPDATES, true)
+        }
+        val flags = PendingIntent.FLAG_UPDATE_CURRENT or
+            (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) PendingIntent.FLAG_IMMUTABLE else 0)
+        val pi = PendingIntent.getActivity(context, installFailedId(key), openIntent, flags)
+
+        val body = message?.takeIf { it.isNotBlank() }
+            ?: context.getString(R.string.update_failed_text)
+        val notif = NotificationCompat.Builder(context, CHANNEL)
+            .setSmallIcon(R.drawable.ic_stat_update)
+            .setContentTitle(context.getString(R.string.update_failed_title, label))
+            .setContentText(body)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(body))
+            .setContentIntent(pi)
+            .setAutoCancel(true)
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .build()
+
+        try {
+            NotificationManagerCompat.from(context).notify(installFailedId(key), notif)
+        } catch (_: SecurityException) {
+        }
+    }
+
+    /** Drop the tap-to-install prompt for [key] once its install has resolved. */
+    fun clearInstallAction(context: Context, key: String) {
+        NotificationManagerCompat.from(context).cancel(installActionId(key))
+    }
+
     private fun installActionId(key: String): Int = 2000 + (key.hashCode() and 0xFFFF)
 
+    private fun installFailedId(key: String): Int = 70000 + (key.hashCode() and 0xFFFF)
+
+    /**
+     * Dismiss everything this app has posted. Called when the user opens App Manager: the
+     * list itself now shows what's pending, so leaving stale update/install prompts behind
+     * would only strand them (a tapped-later prompt points at an abandoned session).
+     */
     fun clear(context: Context) {
-        NotificationManagerCompat.from(context).cancel(NOTIF_ID)
+        NotificationManagerCompat.from(context).cancelAll()
     }
 
     private fun ensureChannel(context: Context) {

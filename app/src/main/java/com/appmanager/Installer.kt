@@ -28,10 +28,26 @@ object Installer {
     const val EXTRA_APP_LABEL = "app_label"
     const val EXTRA_BACKGROUND = "background"
 
+    /** How long a staged download (or share export) is kept before it's swept up. */
+    private const val DOWNLOAD_TTL_MS = 24L * 60 * 60 * 1000
+
+    /**
+     * Drop stale staged APKs. Each install leaves a full APK behind, so without this the
+     * cache grows with every auto-update. Only touches this temp folder — the per-source
+     * cache under `remote/` is what makes revalidation work and must survive.
+     */
+    private fun pruneDownloads(dir: File) {
+        val cutoff = System.currentTimeMillis() - DOWNLOAD_TTL_MS
+        dir.listFiles()?.forEach { f ->
+            if (f.isFile && f.lastModified() < cutoff) f.delete()
+        }
+    }
+
     /** Download [url] to the cache, reporting 0..100 progress (or -1 when unknown). */
     suspend fun download(context: Context, url: String, onProgress: (Int) -> Unit): File =
         withContext(Dispatchers.IO) {
             val dir = File(context.cacheDir, "downloads").apply { mkdirs() }
+            pruneDownloads(dir)
             val out = File(dir, "download-${url.hashCode()}.apk")
             val conn = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 20000

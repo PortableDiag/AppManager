@@ -1,5 +1,30 @@
 # Changelog
 
+## 1.6
+- **Silent auto-update actually works now.** App Manager asked the system to skip the
+  install prompt but never declared `UPDATE_PACKAGES_WITHOUT_USER_ACTION`, so the request
+  was ignored and *every* auto-update fell back to the tap-to-confirm notification — the
+  silent path advertised since 1.5 never ran. Adding the permission fixes it: an opted-in
+  app that App Manager installed now updates in the background with no prompt.
+- **Failed auto-updates are reported.** A background install that failed (signature
+  mismatch, no space, a bad APK) was silent: nothing is listening for the install result
+  when no screen is open, and the app was already excluded from the "updates available"
+  notification. It would quietly re-download and re-fail on every check. Failures now post
+  a notification naming the app and the reason. Backing out of a confirm dialog yourself
+  isn't treated as a failure.
+- **Stale update notifications are cleared.** Opening App Manager only dismissed the
+  "updates available" notification; per-app "update ready" prompts lingered, and tapping
+  one later pointed at an install session that no longer existed. Opening the app now
+  clears all of them, and an install result clears its own prompt.
+- **Auto-update respects mobile data.** Opted-in apps are only auto-installed on an
+  unmetered connection; on mobile data they notify instead, as before. The background
+  check itself still runs anywhere.
+- **Turning on "Auto-update this app" now schedules the check.** The per-app switch did
+  nothing at all while Settings → Automatic updates was Off, with no hint why. It now turns
+  on a daily check (and says so) if none was scheduled.
+- Staged APKs left in the cache are swept after a day instead of accumulating with every
+  update.
+
 ## 1.5
 - **Per-app auto-update:** each app's details screen has an **Auto-update this app** switch,
   off by default. When the background check finds a new version of an opted-in app, it

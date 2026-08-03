@@ -37,10 +37,19 @@ class InstallReceiver : BroadcastReceiver() {
                 }
             }
             PackageInstaller.STATUS_SUCCESS -> {
+                // The tap-to-install prompt (if any) is now stale.
+                Notifier.clearInstallAction(context, pkg ?: label)
                 broadcastResult(context, pkg, true, null)
             }
             else -> {
                 val msg = intent.getStringExtra(PackageInstaller.EXTRA_STATUS_MESSAGE)
+                Notifier.clearInstallAction(context, pkg ?: label)
+                // No activity is listening during a background auto-update, so report the
+                // failure here — otherwise it's silent and repeats on every check. A user
+                // who backed out of the confirm dialog already knows; don't nag them.
+                if (background && status != PackageInstaller.STATUS_FAILURE_ABORTED) {
+                    Notifier.showInstallFailed(context, pkg, label, msg)
+                }
                 broadcastResult(context, pkg, false, msg ?: "status $status")
             }
         }

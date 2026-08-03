@@ -117,7 +117,8 @@
     <string name="auto_weekly">Weekly</string>
 
     <string name="auto_update_app">Auto-update this app</string>
-    <string name="auto_update_app_summary">When a background check finds a new version, install it automatically. Runs silently only for apps App Manager installed (Android 12+); otherwise it posts a one-tap install notification. Off by default.</string>
+    <string name="auto_update_app_summary">When a background check finds a new version, install it automatically. Runs silently only for apps App Manager installed (Android 12+); otherwise it posts a one-tap install notification. Off by default. Turning this on schedules a daily check if automatic updates were off, and skips large downloads while you\'re on mobile data.</string>
+    <string name="auto_checks_enabled">Daily update checks turned on</string>
 
     <string name="updates_channel">Update checks</string>
     <string name="updates_available_one">1 app update available</string>
@@ -125,6 +126,8 @@
     <string name="updates_notif_body">Tap to review, or Update all.</string>
     <string name="update_ready_title">%1$s update ready</string>
     <string name="update_ready_text">Tap to install the update</string>
+    <string name="update_failed_title">%1$s update failed</string>
+    <string name="update_failed_text">Tap to open App Manager and retry</string>
 
     <string name="settings_palette_title">Color theme</string>
     <string name="palette_ocean">Ocean (blue/green)</string>

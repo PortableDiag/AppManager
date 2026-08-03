@@ -1,6 +1,7 @@
 package com.appmanager
 
 import android.content.Context
+import android.net.ConnectivityManager
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 
@@ -18,8 +19,11 @@ class UpdateWorker(context: Context, params: WorkerParameters) : CoroutineWorker
                 applicationContext, prefs.sources, prefs.favoriteDevs, prefs.localDir
             )
             val updates = apps.filter { it.hasUpdate }
+            // An APK is a big download; don't spend someone's mobile data unasked. On a
+            // metered connection the opted-in apps just fall through to a notification.
+            val metered = isMetered()
             val (auto, rest) = updates.partition {
-                it.source != null && prefs.isAutoUpdate(it.packageName)
+                it.source != null && prefs.isAutoUpdate(it.packageName) && !metered
             }
 
             val failed = mutableListOf<ManagedApp>()
@@ -41,6 +45,12 @@ class UpdateWorker(context: Context, params: WorkerParameters) : CoroutineWorker
         } catch (_: Exception) {
             Result.retry()
         }
+    }
+
+    private fun isMetered(): Boolean {
+        val cm = applicationContext.getSystemService(Context.CONNECTIVITY_SERVICE)
+            as? ConnectivityManager ?: return false
+        return cm.isActiveNetworkMetered
     }
 
     private suspend fun autoInstall(app: ManagedApp) {

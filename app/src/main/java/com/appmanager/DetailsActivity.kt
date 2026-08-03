@@ -1,5 +1,6 @@
 package com.appmanager
 
+import android.Manifest
 import android.app.AppOpsManager
 import android.app.usage.UsageStatsManager
 import android.content.BroadcastReceiver
@@ -40,6 +41,9 @@ class DetailsActivity : AppCompatActivity() {
     private var app: ManagedApp? = null
 
     private var pendingInstall = false
+
+    private val notifPermLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { /* best-effort */ }
 
     private val unknownSourcesLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
@@ -176,6 +180,26 @@ class DetailsActivity : AppCompatActivity() {
         binding.switchAutoUpdate.isChecked = prefs.isAutoUpdate(a.packageName)
         binding.switchAutoUpdate.setOnCheckedChangeListener { _, checked ->
             prefs.setAutoUpdate(a.packageName, checked)
+            if (checked) ensureBackgroundChecks()
+        }
+    }
+
+    /**
+     * The per-app switch only does anything if the background check is actually scheduled,
+     * so turning it on schedules one rather than silently doing nothing. Notifications are
+     * how a failed or one-tap update gets reported, so ask for them here too.
+     */
+    private fun ensureBackgroundChecks() {
+        if (prefs.autoUpdateMode == Prefs.AUTO_OFF) {
+            prefs.autoUpdateMode = Prefs.AUTO_DAILY
+            UpdateScheduler.apply(this, prefs.autoUpdateMode)
+            toast(getString(R.string.auto_checks_enabled))
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
+            != PackageManager.PERMISSION_GRANTED
+        ) {
+            notifPermLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
         }
     }
 
