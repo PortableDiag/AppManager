@@ -41,10 +41,15 @@ once, point it at your apps, and update them from your phone.
 - **Search, sort & filter** — search by name/package, sort by status / name / recently
   updated, and filter with chips (All · Updates · Installed · Not installed). Your sort and
   filter choices are remembered.
-- **Two color themes** — Ocean (blue/green) and Terminal (green monospace), each in light
-  and dark. Settings → Color theme.
+- **All seventeen house palettes** — Material You (wallpaper colours, the default), Ocean,
+  Terminal, Trellis, Graphite, Blueprint, Futuristic, Neon, SynthWave, White Glow,
+  Silkscreen, Sticky Notes, Amber Terminal, Phosphor Green, Phosphor P31, Zoro and Nebula.
+  Settings → Color theme. Material You, Ocean and Terminal follow light / dark /
+  follow-system; every other palette is one look. The terminal palettes set the type in
+  monospace, and the status-bar icons follow the palette, not the phone's mode.
 - **Pull to refresh** re-reads the catalog and re-checks what's installed.
-- **Blue→green theme** shared with the other apps, light / dark / follow-system.
+- **A local API** (off by default) so a script or agent on the phone can do everything the
+  screens do — see [The local API](#the-local-api).
 
 It never phones home. The only network it touches is the repository URL **you** give it.
 
@@ -168,9 +173,13 @@ another device or keeping it in version control. See
   "sources": ["github.com/you/lull", "https://example.com/repo/index.json"],
   "favoriteDevs": ["you"],
   "localDir": "",
-  "theme": "system"
+  "theme": "system",
+  "palette": "Zoro"
 }
 ```
+
+`palette` is a name from the list above (`WhiteGlow`, `White Glow` and `white-glow` all
+work). Files from before 1.7 with `"ocean"` or `"terminal"` still import.
 
 ### The local folder (no server needed)
 
@@ -242,6 +251,49 @@ Your per-app choices are included in **Backup & restore** as `autoUpdateApps`.
 
 ---
 
+## The local API
+
+**App Manager can be driven by a script or an agent** — everything the screens do, over HTTP
+on this device. Overflow menu → **Local API…**: switch it on, and App Manager generates a key,
+shows the address, and that is the whole setup. It is shaped like Lull's, so PhoneAPI can call
+it as a provider; pairing agents and per-agent permissions live in PhoneAPI, not here.
+
+```bash
+KEY=<copied from the app>          # adb forward tcp:8797 tcp:8797, from a laptop
+curl -s -H "X-API-Key: $KEY" 127.0.0.1:8797/api/docs             # the full reference
+curl -s -H "X-API-Key: $KEY" 127.0.0.1:8797/api/updates
+curl -s -H "X-API-Key: $KEY" -X POST 127.0.0.1:8797/api/apps/com.lull.player/install
+curl -s -H "X-API-Key: $KEY" 127.0.0.1:8797/api/apps/com.lull.player/install   # poll it
+curl -s -H "X-API-Key: $KEY" -X PATCH 127.0.0.1:8797/api/settings -d '{"palette":"Zoro"}'
+```
+
+| | |
+|---|---|
+| **Catalog** | every app with filter / search / sort as on the list screen, reload from every source, one app's details, **its APK** |
+| **Installs** | install or update one app, Update all, poll each install (`downloading` → `installing` → `awaiting_confirmation` → `installed` / `failed` / `cancelled`) |
+| **Apps** | remove, open, share, and the per-app auto-update switch |
+| **Sources** | list, add (a `github.com/<user>` link follows the dev, as sharing one does), replace, remove; the same for followed devs |
+| **Settings** | palette, light/dark, background checks, local folder, sort, filter; export, import, import the official config; list the palettes |
+
+**The rules it is built to.**
+
+- **Off until you turn it on**, in its own foreground service with a notification naming the
+  address (and a Stop action). It comes back after a reboot only if it was on.
+- **Bound to `127.0.0.1`** unless you switch on LAN access. Default port **8797**.
+- **The key is generated, never typed**, compared in constant time, and never exported with
+  your settings. Anything but `GET /api/health` without it is a `401`. *New key* invalidates
+  the old one at once.
+- **Nothing the UI can't do.** An install from the API goes through the same installer as the
+  Install button; a source added here appears in the list while you watch.
+- **Honest about the screen.** Android won't let an app that is off screen start an activity.
+  With App Manager open, an install, remove or open shows its dialog as usual. In the
+  background, an install runs like an auto-update (silent on Android 12+ for apps App Manager
+  installed, otherwise a one-tap notification), and remove / open / share post a
+  tap-to-finish notification — the response says which (`launched`, `notified`).
+- **`GET /api/docs` serves the whole reference**, so it cannot drift from the build answering.
+
+---
+
 ## Building
 
 Same toolchain as the other apps here (Gradle wrapper, Java 17, SDK at
@@ -284,9 +336,12 @@ standard Android sideload prompt — no root, no special privileges.
 | `InstallReceiver` | Catches the session callback — launches the confirm dialog, then reports success/failure (including failed background installs). |
 | `MainActivity` | The list, refresh, progress, and permission flow. |
 | `DetailsActivity` | The per-app page, Share APK, and the per-app auto-update switch. |
-| `SettingsActivity` | Repository URL, local-folder path, theme, backup/restore. |
+| `SettingsActivity` | Repository URL, local-folder path, palette and light/dark, backup/restore. |
+| `Palette` / `res/values*/palettes.xml` | The house palettes — generated by `tools/gen-palettes.py` from ProjectForge's `palettes.toml`; don't edit by hand. |
+| `api/` | The local API: socket server, router, docs, and the backend that calls the same code as the screens. JVM-tested (`./gradlew :app:testDebugUnitTest`). |
 | `UpdateScheduler` / `UpdateWorker` | Schedules the periodic check and runs it: reload the catalog, auto-install opted-in apps, notify about the rest. |
 | `Notifier` | The updates-waiting, update-ready, and update-failed notifications. |
 
 No ads, no analytics, no tracking. The only background work is the update check you asked
-for in Settings — with it Off, App Manager does nothing until you tap.
+for in Settings, and the local API if you switched it on — with both off, App Manager does
+nothing until you tap.

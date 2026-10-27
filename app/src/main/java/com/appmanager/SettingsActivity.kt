@@ -23,13 +23,9 @@ import kotlinx.coroutines.withContext
 
 class SettingsActivity : AppCompatActivity() {
 
-    private companion object {
-        const val OFFICIAL_CONFIG_URL =
-            "https://raw.githubusercontent.com/PortableDiag/AppManager/main/official-config.json"
-    }
-
     private lateinit var binding: ActivitySettingsBinding
     private lateinit var prefs: Prefs
+    private var chosenPalette = Palette.DEFAULT
 
     private val exportLauncher =
         registerForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
@@ -48,7 +44,7 @@ class SettingsActivity : AppCompatActivity() {
         prefs = Prefs(this)
         ThemeManager.apply(prefs.themeMode)
         super.onCreate(savedInstanceState)
-        setTheme(ThemeManager.paletteTheme(prefs.palette))
+        ThemeManager.applyPalette(this, prefs.palette)
         binding = ActivitySettingsBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
@@ -60,6 +56,11 @@ class SettingsActivity : AppCompatActivity() {
             val bottom = insets.getInsets(WindowInsetsCompat.Type.systemBars()).bottom
             v.updatePadding(bottom = basePad + bottom)
             insets
+        }
+
+        binding.paletteInput.setSimpleItems(Palette.entries.map { it.label }.toTypedArray())
+        binding.paletteInput.setOnItemClickListener { _, _, position, _ ->
+            chosenPalette = Palette.entries[position]
         }
 
         bindFromPrefs()
@@ -98,8 +99,8 @@ class SettingsActivity : AppCompatActivity() {
             Prefs.THEME_DARK -> binding.themeDark.isChecked = true
             else -> binding.themeSystem.isChecked = true
         }
-        if (prefs.palette == Prefs.PALETTE_TERMINAL) binding.paletteTerminal.isChecked = true
-        else binding.paletteOcean.isChecked = true
+        chosenPalette = prefs.palette
+        binding.paletteInput.setText(chosenPalette.label, false)
         when (prefs.autoUpdateMode) {
             Prefs.AUTO_DAILY -> binding.autoDaily.isChecked = true
             Prefs.AUTO_WEEKLY -> binding.autoWeekly.isChecked = true
@@ -118,8 +119,7 @@ class SettingsActivity : AppCompatActivity() {
         }
         ThemeManager.apply(prefs.themeMode)
 
-        prefs.palette = if (binding.paletteGroup.checkedRadioButtonId == R.id.palette_terminal)
-            Prefs.PALETTE_TERMINAL else Prefs.PALETTE_OCEAN
+        prefs.palette = chosenPalette
 
         prefs.autoUpdateMode = when (binding.autoGroup.checkedRadioButtonId) {
             R.id.auto_daily -> Prefs.AUTO_DAILY
@@ -157,7 +157,7 @@ class SettingsActivity : AppCompatActivity() {
         Toast.makeText(this, R.string.importing_official, Toast.LENGTH_SHORT).show()
         lifecycleScope.launch {
             try {
-                val text = withContext(Dispatchers.IO) { AppRepository.fetchText(OFFICIAL_CONFIG_URL) }
+                val text = withContext(Dispatchers.IO) { AppRepository.fetchText(AppRepository.OFFICIAL_CONFIG_URL) }
                 prefs.importJson(text)
                 bindFromPrefs()
                 ThemeManager.apply(prefs.themeMode)

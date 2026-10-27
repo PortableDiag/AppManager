@@ -31,7 +31,6 @@ import com.appmanager.databinding.ItemDetailBinding
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.io.File
 import java.util.Date
 
 class DetailsActivity : AppCompatActivity() {
@@ -74,7 +73,7 @@ class DetailsActivity : AppCompatActivity() {
         prefs = Prefs(this)
         ThemeManager.apply(prefs.themeMode)
         super.onCreate(savedInstanceState)
-        setTheme(ThemeManager.paletteTheme(prefs.palette))
+        ThemeManager.applyPalette(this, prefs.palette)
         binding = ActivityDetailsBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
@@ -334,7 +333,7 @@ class DetailsActivity : AppCompatActivity() {
         toast(getString(R.string.preparing_share))
         lifecycleScope.launch {
             try {
-                val file = withContext(Dispatchers.IO) { prepareApkForShare(a) }
+                val file = withContext(Dispatchers.IO) { ApkExport.prepare(this@DetailsActivity, a) }
                 val uri = FileProvider.getUriForFile(
                     this@DetailsActivity, "$packageName.fileprovider", file
                 )
@@ -348,29 +347,6 @@ class DetailsActivity : AppCompatActivity() {
                 toast(getString(R.string.share_failed, e.message ?: "error"))
             }
         }
-    }
-
-    /** Copy the best available APK to a friendly-named cache file for sharing. */
-    private suspend fun prepareApkForShare(a: ManagedApp): File {
-        val installedSource = if (a.installed) {
-            try { File(packageManager.getApplicationInfo(a.packageName, 0).sourceDir) }
-            catch (_: Exception) { null }
-        } else null
-
-        val srcFile: File = when {
-            installedSource?.exists() == true -> installedSource
-            a.source is ApkSource.Local -> a.source.file
-            a.source is ApkSource.Remote -> Installer.download(applicationContext, a.source.url) {}
-            else -> throw IllegalStateException("no APK available to share")
-        }
-
-        val version = a.installedVersionName ?: a.availableVersionName
-            ?: a.availableVersionCode.toString()
-        val name = ("${a.label}-$version").replace(Regex("[^A-Za-z0-9._-]"), "_") + ".apk"
-        val outDir = File(cacheDir, "downloads").apply { mkdirs() }
-        val out = File(outDir, name)
-        srcFile.inputStream().use { input -> out.outputStream().use { input.copyTo(it) } }
-        return out
     }
 
     private fun versionString(name: String?, code: Long): String {

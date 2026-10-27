@@ -65,6 +65,10 @@ object AppRepository {
     const val SELF_REPO = "https://github.com/PortableDiag/AppManager"
     const val SELF_PACKAGE = "com.appmanager"
 
+    /** The repo's published settings, applied by "Import official config". */
+    const val OFFICIAL_CONFIG_URL =
+        "https://raw.githubusercontent.com/PortableDiag/AppManager/main/official-config.json"
+
     /** The app's private drop folder — the default, needing no storage permission. */
     fun defaultLocalDir(context: Context): File {
         val dir = File(context.getExternalFilesDir(null), "repo")

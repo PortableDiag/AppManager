@@ -217,24 +217,27 @@
                 android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
                 android:textColor="?attr/colorOnSurface" />
 
-            <RadioGroup
-                android:id="@+id/palette_group"
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/palette_layout"
+                style="@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp">
 
-                <RadioButton
-                    android:id="@+id/palette_ocean"
+                <com.google.android.material.textfield.MaterialAutoCompleteTextView
+                    android:id="@+id/palette_input"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="@string/palette_ocean" />
+                    android:inputType="none" />
+            </com.google.android.material.textfield.TextInputLayout>
 
-                <RadioButton
-                    android:id="@+id/palette_terminal"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="@string/palette_terminal" />
-            </RadioGroup>
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="@string/settings_palette_hint"
+                android:textAppearance="@style/TextAppearance.Material3.BodySmall"
+                android:textColor="?attr/colorOnSurfaceVariant" />
 
             <View
                 android:layout_width="match_parent"

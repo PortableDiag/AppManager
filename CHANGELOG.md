@@ -1,5 +1,23 @@
 # Changelog
 
+## 1.7
+- **A local API**, off until you turn it on (overflow menu → Local API…). A script or agent
+  on the phone can do everything the screens do: browse the catalog, install and update
+  (and poll each install), Update all, remove, open and share apps, toggle per-app
+  auto-update, manage sources and followed devs, and change, export and import settings.
+  Loopback only unless you allow LAN, a generated key, port 8797, and `GET /api/docs`
+  serves the full reference. Shaped like Lull's, so PhoneAPI can use it as a provider.
+- **All seventeen house palettes** replace Ocean/Terminal: Material You (wallpaper
+  colours), Ocean, Terminal, Trellis, Graphite, Blueprint, Futuristic, Neon, SynthWave,
+  White Glow, Silkscreen, Sticky Notes, Amber Terminal, Phosphor Green, Phosphor P31, Zoro
+  and Nebula, picked from a list in Settings. Material You, Ocean and Terminal follow
+  light/dark; the rest are one look, with status-bar icons to match. Material You is the
+  default for a new install; an existing install keeps Ocean or Terminal.
+- The list follows changes made while it is open — a palette, a source, the filter.
+- A palette change during a catalog load no longer reports "Couldn't load catalog: Job was
+  cancelled".
+- First unit tests: 39 JVM tests over the API's HTTP parsing and every route.
+
 ## 1.6
 - **Silent auto-update actually works now.** App Manager asked the system to skip the
   install prompt but never declared `UPDATE_PACKAGES_WITHOUT_USER_ACTION`, so the request

@@ -23,6 +23,7 @@ class InstallReceiver : BroadcastReceiver() {
 
         when (status) {
             PackageInstaller.STATUS_PENDING_USER_ACTION -> {
+                pkg?.let { InstallJobs.update(it, InstallJob.AWAITING_CONFIRMATION) }
                 @Suppress("DEPRECATION")
                 val confirm = intent.getParcelableExtra<Intent>(Intent.EXTRA_INTENT)
                 if (confirm != null) {
@@ -39,11 +40,17 @@ class InstallReceiver : BroadcastReceiver() {
             PackageInstaller.STATUS_SUCCESS -> {
                 // The tap-to-install prompt (if any) is now stale.
                 Notifier.clearInstallAction(context, pkg ?: label)
+                pkg?.let { InstallJobs.update(it, InstallJob.INSTALLED) }
                 broadcastResult(context, pkg, true, null)
             }
             else -> {
                 val msg = intent.getStringExtra(PackageInstaller.EXTRA_STATUS_MESSAGE)
                 Notifier.clearInstallAction(context, pkg ?: label)
+                pkg?.let {
+                    val state = if (status == PackageInstaller.STATUS_FAILURE_ABORTED)
+                        InstallJob.CANCELLED else InstallJob.FAILED
+                    InstallJobs.update(it, state, message = msg ?: "status $status")
+                }
                 // No activity is listening during a background auto-update, so report the
                 // failure here — otherwise it's silent and repeats on every check. A user
                 // who backed out of the confirm dialog already knows; don't nag them.

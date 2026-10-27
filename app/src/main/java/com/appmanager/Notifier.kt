@@ -117,6 +117,30 @@ object Notifier {
         }
     }
 
+    /**
+     * A local-API request that needs a screen (remove or open an app) made while App Manager
+     * was in the background, where Android would refuse to start the activity. The tap does it.
+     */
+    fun showUserAction(context: Context, key: String, title: String, text: String, action: Intent) {
+        ensureChannel(context)
+        val flags = PendingIntent.FLAG_UPDATE_CURRENT or
+            (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) PendingIntent.FLAG_IMMUTABLE else 0)
+        val id = userActionId(key)
+        val pi = PendingIntent.getActivity(context, id, action, flags)
+        val notif = NotificationCompat.Builder(context, CHANNEL)
+            .setSmallIcon(R.drawable.ic_stat_update)
+            .setContentTitle(title)
+            .setContentText(text)
+            .setContentIntent(pi)
+            .setAutoCancel(true)
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .build()
+        try {
+            NotificationManagerCompat.from(context).notify(id, notif)
+        } catch (_: SecurityException) {
+        }
+    }
+
     /** Drop the tap-to-install prompt for [key] once its install has resolved. */
     fun clearInstallAction(context: Context, key: String) {
         NotificationManagerCompat.from(context).cancel(installActionId(key))
@@ -125,6 +149,8 @@ object Notifier {
     private fun installActionId(key: String): Int = 2000 + (key.hashCode() and 0xFFFF)
 
     private fun installFailedId(key: String): Int = 70000 + (key.hashCode() and 0xFFFF)
+
+    private fun userActionId(key: String): Int = 140000 + (key.hashCode() and 0xFFFF)
 
     /**
      * Dismiss everything this app has posted. Called when the user opens App Manager: the

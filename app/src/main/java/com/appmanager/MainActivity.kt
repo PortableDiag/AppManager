@@ -6,6 +6,7 @@ import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
@@ -20,9 +21,11 @@ import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.appmanager.databinding.ActivityMainBinding
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 
 class MainActivity : AppCompatActivity() {
@@ -38,7 +41,7 @@ class MainActivity : AppCompatActivity() {
     private var allApps: List<ManagedApp> = emptyList()
     private var query: String = ""
     private var pendingStartBatch = false
-    private var themedPalette = Prefs.PALETTE_OCEAN
+    private var themedPalette = Palette.DEFAULT
 
     private val updateQueue = ArrayDeque<String>()
     private var currentBatchPkg: String? = null
@@ -77,11 +80,29 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    /**
+     * Settings can change under a visible list — an agent on the local API adds a source or picks
+     * a palette — so the screen follows the stored values rather than only its own taps. While
+     * stopped, onStart does the same work, so nothing here runs twice.
+     */
+    private val prefsListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+        if (!lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)) return@OnSharedPreferenceChangeListener
+        when (key) {
+            Prefs.KEY_PALETTE -> if (prefs.palette != themedPalette) recreate()
+            Prefs.KEY_SOURCES, Prefs.KEY_DEVS, Prefs.KEY_LOCAL -> if (currentBatchPkg == null) refresh()
+            Prefs.KEY_FILTER -> {
+                binding.filterChips.check(FILTER_CHIPS[prefs.filterMode] ?: R.id.chip_all)
+                applyView()
+            }
+            Prefs.KEY_SORT -> applyView()
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         prefs = Prefs(this)
         ThemeManager.apply(prefs.themeMode)
         super.onCreate(savedInstanceState)
-        setTheme(ThemeManager.paletteTheme(prefs.palette))
+        ThemeManager.applyPalette(this, prefs.palette)
         themedPalette = prefs.palette
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
@@ -113,6 +134,7 @@ class MainActivity : AppCompatActivity() {
         )
 
         UpdateScheduler.apply(this, prefs.autoUpdateMode)
+        prefs.listen(prefsListener)
 
         handleShareIntent(intent)
         handleLaunchIntent(intent)
@@ -134,6 +156,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
+        prefs.unlisten(prefsListener)
         unregisterReceiver(installResultReceiver)
     }
 
@@ -198,6 +221,7 @@ class MainActivity : AppCompatActivity() {
             R.id.action_settings -> {
                 startActivity(Intent(this, SettingsActivity::class.java)); true
             }
+            R.id.action_api -> { com.appmanager.api.ApiSettingsDialog.show(this); true }
             else -> super.onOptionsItemSelected(item)
         }
     }
@@ -223,12 +247,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setupFilterChips() {
-        val idFor = mapOf(
-            FILTER_ALL to R.id.chip_all,
-            FILTER_UPDATES to R.id.chip_updates,
-            FILTER_INSTALLED to R.id.chip_installed,
-            FILTER_NOT_INSTALLED to R.id.chip_not_installed
-        )
+        val idFor = FILTER_CHIPS
         binding.filterChips.check(idFor[prefs.filterMode] ?: R.id.chip_all)
         binding.filterChips.setOnCheckedStateChangeListener { _, checkedIds ->
             val checked = checkedIds.firstOrNull() ?: return@setOnCheckedStateChangeListener
@@ -334,41 +353,14 @@ class MainActivity : AppCompatActivity() {
 
     /** Pull the first URL-looking token out of [text] and add it as a source. */
     private fun addSourceFromText(text: String) {
-        val token = text.trim().split(Regex("\\s+")).firstOrNull { looksLikeUrl(it) }
-        if (token == null) {
-            toast(getString(R.string.not_a_url))
-            return
+        // The prefs listener reloads the catalog when the list actually changes.
+        when (val r = Sources.add(prefs, text)) {
+            Sources.Added.NotAUrl -> toast(getString(R.string.not_a_url))
+            is Sources.Added.Dev ->
+                toast(getString(if (r.isNew) R.string.dev_added else R.string.dev_exists, r.user))
+            is Sources.Added.Source ->
+                toast(getString(if (r.isNew) R.string.source_added else R.string.source_exists, r.url))
         }
-        val url = AppRepository.normalizeUrl(token)
-
-        // A github.com/username link means "follow this dev", not a single source.
-        if (AppRepository.isGitHubUserUrl(url)) {
-            val dev = AppRepository.normalizeDev(token)
-            val devs = prefs.favoriteDevs
-            if (devs.any { it.equals(dev, ignoreCase = true) }) {
-                toast(getString(R.string.dev_exists, dev))
-            } else {
-                prefs.favoriteDevs = devs + dev
-                toast(getString(R.string.dev_added, dev))
-                refresh()
-            }
-            return
-        }
-
-        val current = prefs.sources
-        if (current.any { it.equals(url, ignoreCase = true) }) {
-            toast(getString(R.string.source_exists, url))
-            return
-        }
-        prefs.sources = current + url
-        toast(getString(R.string.source_added, url))
-        refresh()
-    }
-
-    private fun looksLikeUrl(s: String): Boolean {
-        val t = s.trim()
-        return t.startsWith("http://", true) || t.startsWith("https://", true) ||
-            t.startsWith("github.com/", true) || t.startsWith("www.github.com/", true)
     }
 
     private fun refresh() {
@@ -388,6 +380,9 @@ class MainActivity : AppCompatActivity() {
                 allApps = apps
                 applyView()
                 if (pendingStartBatch) { pendingStartBatch = false; startBatchUpdate() }
+            } catch (e: CancellationException) {
+                // The screen went away mid-load (a palette change recreates it); not a failure.
+                throw e
             } catch (e: Exception) {
                 toast(getString(R.string.refresh_failed, e.message ?: "error"))
             } finally {
@@ -522,5 +517,12 @@ class MainActivity : AppCompatActivity() {
         private const val FILTER_UPDATES = 1
         private const val FILTER_INSTALLED = 2
         private const val FILTER_NOT_INSTALLED = 3
+
+        private val FILTER_CHIPS = mapOf(
+            FILTER_ALL to R.id.chip_all,
+            FILTER_UPDATES to R.id.chip_updates,
+            FILTER_INSTALLED to R.id.chip_installed,
+            FILTER_NOT_INSTALLED to R.id.chip_not_installed
+        )
     }
 }

@@ -1,8 +1,10 @@
 package com.appmanager
 
+import android.app.Activity
 import androidx.appcompat.app.AppCompatDelegate
+import com.google.android.material.color.DynamicColors
 
-/** Maps the saved [Prefs.themeMode] onto AppCompat's day/night mode. */
+/** Maps the saved [Prefs.themeMode] and [Prefs.palette] onto the activity's theme. */
 object ThemeManager {
     fun apply(mode: Int) {
         AppCompatDelegate.setDefaultNightMode(
@@ -14,8 +16,12 @@ object ThemeManager {
         )
     }
 
-    /** The theme style for the chosen colour palette; applied per-activity before inflate. */
-    fun paletteTheme(palette: Int): Int =
-        if (palette == Prefs.PALETTE_TERMINAL) R.style.Theme_AppManager_Terminal
-        else R.style.Theme_AppManager
+    /**
+     * Applies the chosen house palette; call after super.onCreate and before inflating.
+     * Material You layers the wallpaper colours on top (Android 12+; stock Material 3 below).
+     */
+    fun applyPalette(activity: Activity, palette: Palette) {
+        activity.setTheme(palette.style)
+        if (palette == Palette.MaterialYou) DynamicColors.applyToActivityIfAvailable(activity)
+    }
 }

@@ -1,10 +1,11 @@
 package com.appmanager
 
 import android.content.Context
+import android.content.SharedPreferences
 import org.json.JSONArray
 import org.json.JSONObject
 
-/** Small persistent settings store: repo URL and theme choice. */
+/** Small persistent settings store: sources, devs, theme and update choices. */
 class Prefs(context: Context) {
     private val sp = context.getSharedPreferences("appmanager", Context.MODE_PRIVATE)
 
@@ -56,10 +57,26 @@ class Prefs(context: Context) {
         get() = sp.getInt(KEY_THEME, THEME_SYSTEM)
         set(value) = sp.edit().putInt(KEY_THEME, value).apply()
 
-    /** Colour palette: [PALETTE_OCEAN] (blue/green) or [PALETTE_TERMINAL] (green mono). */
-    var palette: Int
-        get() = sp.getInt(KEY_PALETTE, PALETTE_OCEAN)
-        set(value) = sp.edit().putInt(KEY_PALETTE, value).apply()
+    /**
+     * The house colour palette, saved by name. Up to 1.6 this was an int (0 = Ocean,
+     * 1 = Terminal); that value is read once and rewritten as a name. An install that predates
+     * the palettes but never picked one keeps the Ocean look it already had; a fresh install
+     * starts on the house default.
+     */
+    var palette: Palette
+        get() {
+            val stored = runCatching { sp.getString(KEY_PALETTE, null) }.getOrNull()
+            if (stored != null) return Palette.find(stored) ?: Palette.DEFAULT
+            val legacy = runCatching { sp.getInt(KEY_PALETTE, -1) }.getOrDefault(-1)
+            val chosen = when {
+                legacy == 1 -> Palette.Terminal
+                legacy == 0 || sp.all.isNotEmpty() -> Palette.Ocean
+                else -> Palette.DEFAULT
+            }
+            palette = chosen
+            return chosen
+        }
+        set(value) = sp.edit().putString(KEY_PALETTE, value.name).apply()
 
     /** List sort: 0 = status, 1 = name, 2 = recently updated. */
     var sortMode: Int
@@ -94,6 +111,13 @@ class Prefs(context: Context) {
         autoUpdateApps = if (enabled) cur + pkg else cur - pkg
     }
 
+    /** Changes from anywhere in the process — the settings screen or the local API. */
+    fun listen(l: SharedPreferences.OnSharedPreferenceChangeListener) =
+        sp.registerOnSharedPreferenceChangeListener(l)
+
+    fun unlisten(l: SharedPreferences.OnSharedPreferenceChangeListener) =
+        sp.unregisterOnSharedPreferenceChangeListener(l)
+
     /** Serialize all settings to portable JSON. */
     fun exportJson(): String {
         val o = JSONObject()
@@ -102,7 +126,7 @@ class Prefs(context: Context) {
         o.put("favoriteDevs", JSONArray(favoriteDevs))
         o.put("localDir", localDir)
         o.put("theme", themeName(themeMode))
-        o.put("palette", if (palette == PALETTE_TERMINAL) "terminal" else "ocean")
+        o.put("palette", palette.name)
         o.put("autoUpdate", autoUpdateMode)
         o.put("autoUpdateApps", JSONArray(autoUpdateApps.toList()))
         return o.toString(2)
@@ -115,8 +139,7 @@ class Prefs(context: Context) {
         o.optJSONArray("favoriteDevs")?.let { favoriteDevs = it.toStringList() }
         if (o.has("localDir")) localDir = o.optString("localDir")
         if (o.has("theme")) themeMode = themeFromName(o.optString("theme"), themeMode)
-        if (o.has("palette")) palette =
-            if (o.optString("palette").equals("terminal", true)) PALETTE_TERMINAL else PALETTE_OCEAN
+        if (o.has("palette")) Palette.find(o.optString("palette"))?.let { palette = it }
         if (o.has("autoUpdate")) autoUpdateMode = o.optInt("autoUpdate", autoUpdateMode)
         o.optJSONArray("autoUpdateApps")?.let { autoUpdateApps = it.toStringList().toSet() }
     }
@@ -124,13 +147,13 @@ class Prefs(context: Context) {
     private fun JSONArray.toStringList(): List<String> =
         (0 until length()).map { optString(it).trim() }.filter { it.isNotBlank() }
 
-    private fun themeName(mode: Int) = when (mode) {
+    fun themeName(mode: Int) = when (mode) {
         THEME_LIGHT -> "light"
         THEME_DARK -> "dark"
         else -> "system"
     }
 
-    private fun themeFromName(name: String, fallback: Int) = when (name.lowercase()) {
+    fun themeFromName(name: String, fallback: Int) = when (name.lowercase()) {
         "light" -> THEME_LIGHT
         "dark" -> THEME_DARK
         "system" -> THEME_SYSTEM
@@ -139,12 +162,12 @@ class Prefs(context: Context) {
 
     companion object {
         private const val KEY_REPO = "repo_url"
-        private const val KEY_PALETTE = "palette"
-        private const val KEY_SOURCES = "sources"
-        private const val KEY_DEVS = "favorite_devs"
-        private const val KEY_LOCAL = "local_dir"
-        private const val KEY_SORT = "sort_mode"
-        private const val KEY_FILTER = "filter_mode"
+        const val KEY_PALETTE = "palette"
+        const val KEY_SOURCES = "sources"
+        const val KEY_DEVS = "favorite_devs"
+        const val KEY_LOCAL = "local_dir"
+        const val KEY_SORT = "sort_mode"
+        const val KEY_FILTER = "filter_mode"
         private const val KEY_AUTO = "auto_update_mode"
         private const val KEY_AUTO_APPS = "auto_update_apps"
 
@@ -156,8 +179,5 @@ class Prefs(context: Context) {
         const val THEME_SYSTEM = 0
         const val THEME_LIGHT = 1
         const val THEME_DARK = 2
-
-        const val PALETTE_OCEAN = 0
-        const val PALETTE_TERMINAL = 1
     }
 }

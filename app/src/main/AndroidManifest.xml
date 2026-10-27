@@ -21,8 +21,14 @@
     <!-- Optional: "last used" in app details (granted via the Usage access settings screen). -->
     <uses-permission android:name="android.permission.PACKAGE_USAGE_STATS"
         tools:ignore="ProtectedPermissions" />
+    <!-- The local API only: its foreground service, and putting it back after a reboot.
+         Both are inert while the API is switched off, which is how it ships. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
     <application
+        android:name=".AppManagerApp"
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
@@ -59,6 +65,25 @@
             android:exported="false"
             android:theme="@style/Theme.AppManager"
             android:parentActivityName=".MainActivity" />
+
+        <!-- The local API's own foreground service: off until switched on in the app. -->
+        <service
+            android:name=".api.ApiService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Serves the user-enabled local HTTP API that lets a script on this device manage app installs" />
+        </service>
+
+        <receiver
+            android:name=".api.BootReceiver"
+            android:exported="true"
+            android:enabled="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
 
         <!-- Receives PackageInstaller session status callbacks -->
         <receiver
