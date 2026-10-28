@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.7.3
+- The local API comes back after App Manager is updated, not only after a reboot, so PhoneAPI
+  keeps it across updates without the app being opened.
+
 ## 1.7.2
 - PhoneAPI's key screen has side margins, says "It may:", and a second link starts the See and
   Change switches where PhoneAPI's current key has them.
