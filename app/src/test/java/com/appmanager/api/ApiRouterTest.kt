@@ -17,7 +17,7 @@ class ApiRouterTest {
     @Before
     fun setUp() {
         backend = FakeBackend()
-        router = ApiRouter(backend) { key }
+        router = ApiRouter(backend, { key })
     }
 
     private fun call(method: String, path: String, body: String = "", auth: String? = key): ApiResponse {
@@ -49,7 +49,7 @@ class ApiRouterTest {
 
     @Test
     fun `an empty expected key opens nothing`() {
-        val locked = ApiRouter(backend) { "" }
+        val locked = ApiRouter(backend, { "" })
         assertEquals(401, locked.handle(ApiRequest("GET", "/api/apps", headers = mapOf("x-api-key" to ""))).status)
     }
 

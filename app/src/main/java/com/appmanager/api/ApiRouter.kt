@@ -17,7 +17,9 @@ import org.json.JSONObject
  */
 class ApiRouter(
     private val backend: ApiBackend,
-    private val expectedKey: () -> String
+    private val expectedKey: () -> String,
+    /** PhoneAPI's own key and what it may do (provider contract §3); null when it holds none. */
+    private val phoneApi: () -> PhoneApiGrant? = { null }
 ) {
 
     companion object {
@@ -42,11 +44,19 @@ class ApiRouter(
                 "everything this server answers lives under /api — GET /api/docs lists it"
             )
             request.path in OPEN_PATHS -> dispatch(request)
-            !authorised(request) -> ApiResponse.error(
-                401, "missing or invalid API key",
-                "send it as the X-API-Key header, or Authorization: Bearer <key>"
-            )
-            else -> dispatch(request)
+            else -> when (val caller = caller(request)) {
+                Caller.Nobody -> ApiResponse.error(
+                    401, "missing or invalid API key",
+                    "send it as the X-API-Key header, or Authorization: Bearer <key>"
+                )
+                Caller.Owner -> dispatch(request)
+                is Caller.PhoneApiKey ->
+                    if (caller.grant.allows(request.method)) dispatch(request)
+                    else ApiResponse.error(
+                        403, "PhoneAPI's key may not ${if (request.method == "GET") "see" else "change"} anything",
+                        "the owner chose what it may do when they allowed PhoneAPI; link again in PhoneAPI to change it"
+                    )
+            }
         }
     } catch (e: ApiException) {
         ApiResponse.error(e.status, e.message ?: "request failed", e.hint)
@@ -54,19 +64,21 @@ class ApiRouter(
         ApiResponse.error(500, "${e.javaClass.simpleName}: ${e.message}")
     }
 
-    /** Constant-time comparison: the timing of a string compare leaks how much of a key is right. */
-    private fun authorised(request: ApiRequest): Boolean {
-        val expected = expectedKey()
-        if (expected.isEmpty()) return false
+    private sealed interface Caller {
+        object Nobody : Caller
+        object Owner : Caller
+        class PhoneApiKey(val grant: PhoneApiGrant) : Caller
+    }
+
+    /** Whose key this is: the owner's (everything), PhoneAPI's (what it was allowed), or nobody's. */
+    private fun caller(request: ApiRequest): Caller {
         val offered = request.header("x-api-key")
             ?: request.header("authorization")?.removePrefix("Bearer ")?.removePrefix("bearer ")?.trim()
-            ?: return false
-        val a = offered.toByteArray()
-        val b = expected.toByteArray()
-        if (a.size != b.size) return false
-        var diff = 0
-        for (i in a.indices) diff = diff or (a[i].toInt() xor b[i].toInt())
-        return diff == 0
+            ?: return Caller.Nobody
+        if (PhoneApi.sameKey(offered, expectedKey())) return Caller.Owner
+        val grant = phoneApi()
+        if (grant != null && PhoneApi.sameKey(offered, grant.key)) return Caller.PhoneApiKey(grant)
+        return Caller.Nobody
     }
 
     // ---------------- Dispatch ----------------

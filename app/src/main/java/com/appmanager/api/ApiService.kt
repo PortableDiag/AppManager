@@ -73,8 +73,9 @@ class ApiService : Service() {
         val address = ApiPrefs.bindAddress(this)
         val port = ApiPrefs.port(this)
         val impl = AppManagerBackend(applicationContext)
-        val router = ApiRouter(impl) { ApiPrefs.key(this) }
-        val api = ApiServer(router, address, port)
+        PhoneApiLink.dropIfGone(this)
+        val router = ApiRouter(impl, { ApiPrefs.key(this) }, { PhoneApiLink.grant(this) })
+        val api = ApiServer(router, address, port) { PhoneApiLink.proofKey(this) }
 
         // Foreground first: a service that binds a socket before it has posted its notification is
         // a service that can be killed with the socket open.

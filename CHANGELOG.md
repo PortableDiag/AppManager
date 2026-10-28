@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.7.1
+- **PhoneAPI can link to App Manager** (PhoneAPI provider contract §2 and §3). PhoneAPI's
+  release build asks for a key on App Manager's own screen ("Let PhoneAPI use AppManager?"),
+  with two switches, both off: **See** (every GET) and **Change** (everything else). Its key
+  is separate from yours, a second link replaces it, and anything it was not allowed is a 403.
+  Allow switches the local API on. Any other caller, a debug build of PhoneAPI included, is
+  refused without a screen.
+- Once linked, every answer to a request carrying `X-PhoneAPI-Challenge` carries
+  `X-PhoneAPI-Proof`, so PhoneAPI can tell App Manager from anything else on port 8797.
+- Unlink PhoneAPI in Local API…; uninstalling PhoneAPI (or a PhoneAPI no longer signed by its
+  release key) drops the key.
+
 ## 1.7
 - **A local API**, off until you turn it on (overflow menu → Local API…). A script or agent
   on the phone can do everything the screens do: browse the catalog, install and update

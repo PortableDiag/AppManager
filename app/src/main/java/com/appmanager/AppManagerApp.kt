@@ -21,6 +21,8 @@ class AppManagerApp : Application() {
             override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle) {}
             override fun onActivityDestroyed(activity: Activity) {}
         })
+        // Android runs no code on uninstall: drop PhoneAPI's key if PhoneAPI left while we weren't looking.
+        com.appmanager.api.PhoneApiLink.dropIfGone(this)
         com.appmanager.api.ApiService.startIfEnabled(this)
     }
 

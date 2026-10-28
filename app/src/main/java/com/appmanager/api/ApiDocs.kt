@@ -149,6 +149,15 @@ applies the published official config.
 `GET /api/palettes` — the house palettes in picker order, which follow light/dark, which are
 monospace, and which is current.
 
+## PhoneAPI
+
+PhoneAPI (`com.phoneapi.app`, release build only) gets its own key through the
+`com.phoneapi.action.GRANT_KEY` handshake, separate from the owner's key. The owner picks what it
+may do: **See** (every `GET`) and **Change** (everything else); anything not allowed is a `403`.
+Once linked, every answer to a request carrying `X-PhoneAPI-Challenge` (health, 401s and errors
+included) carries `X-PhoneAPI-Proof: base64url_nopad(HMAC-SHA256(proof_key, challenge))`.
+Unlink in Local API; uninstalling PhoneAPI drops its key.
+
 ## Examples
 
 ```bash

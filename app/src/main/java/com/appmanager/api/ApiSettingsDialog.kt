@@ -67,6 +67,27 @@ object ApiSettingsDialog {
             Toast.makeText(context, R.string.api_copied, Toast.LENGTH_SHORT).show()
         }
 
+        fun renderPhoneApi() {
+            val grant = PhoneApiLink.grant(context)
+            binding.phoneApiStatus.text = if (grant == null) context.getString(R.string.phoneapi_none)
+            else context.getString(
+                R.string.phoneapi_linked, context.getString(
+                    when {
+                        grant.see && grant.change -> R.string.phoneapi_linked_both
+                        grant.change -> R.string.phoneapi_linked_change
+                        else -> R.string.phoneapi_linked_see
+                    }
+                )
+            )
+            binding.phoneApiUnlink.visibility = if (grant == null) android.view.View.GONE else android.view.View.VISIBLE
+        }
+        renderPhoneApi()
+        binding.phoneApiUnlink.setOnClickListener {
+            PhoneApiLink.unlink(context)
+            renderPhoneApi()
+            Toast.makeText(context, R.string.phoneapi_unlinked, Toast.LENGTH_SHORT).show()
+        }
+
         binding.apiRegenerate.setOnClickListener {
             ApiPrefs.regenerateKey(context)
             renderKey()

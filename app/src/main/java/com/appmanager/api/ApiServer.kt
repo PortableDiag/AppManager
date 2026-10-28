@@ -28,7 +28,9 @@ import java.util.concurrent.atomic.AtomicBoolean
 class ApiServer(
     private val router: ApiRouter,
     private val bindAddress: String,
-    private val port: Int
+    private val port: Int,
+    /** PhoneAPI's proof key (provider contract §2); null when PhoneAPI holds none. */
+    private val proofKey: () -> ByteArray? = { null }
 ) {
 
     companion object {
@@ -102,10 +104,13 @@ class ApiServer(
             val input = BufferedInputStream(socket.getInputStream())
             val output = BufferedOutputStream(socket.getOutputStream())
 
+            var headers: Map<String, String>? = null
             val response = try {
                 val request = Http.parse(input) ?: return
+                headers = request.headers
                 router.handle(request)
             } catch (e: ApiException) {
+                if (headers == null) headers = e.requestHeaders
                 ApiResponse.error(e.status, e.message ?: "bad request", e.hint)
             } catch (e: SocketTimeoutException) {
                 return
@@ -116,12 +121,15 @@ class ApiServer(
                 ApiResponse.error(500, "${e.javaClass.simpleName}: ${e.message}")
             }
 
-            runCatching { write(output, response) }
+            // Every answer to a challenge carries the proof, errors and 401s included, so PhoneAPI
+            // can tell App Manager from anything else that bound this port while the API was off.
+            val proof = runCatching { PhoneApi.proofHeader(headers, proofKey()) }.getOrDefault(emptyMap())
+            runCatching { write(output, response, proof) }
                 .onFailure { Log.w(TAG, "response failed", it) }
         }
     }
 
-    private fun write(output: OutputStream, response: ApiResponse) {
+    private fun write(output: OutputStream, response: ApiResponse, proof: Map<String, String>) {
         val length = if (response.stream != null) response.streamLength else response.body.size.toLong()
         val head = StringBuilder()
             .append("HTTP/1.1 ${response.status} ${response.reason}\r\n")
@@ -135,6 +143,7 @@ class ApiServer(
             .append("Access-Control-Allow-Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS\r\n")
             .apply {
                 for ((name, value) in response.extraHeaders) append("$name: $value\r\n")
+                for ((name, value) in proof) append("$name: $value\r\n")
             }
             .append("\r\n")
             .toString()

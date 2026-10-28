@@ -164,5 +164,21 @@
     <string name="api_tap_remove_title">Remove %1$s?</string>
     <string name="api_tap_open_title">Open %1$s</string>
     <string name="api_tap_share_title">Share %1$s</string>
+    <string name="phoneapi_title">Let PhoneAPI use AppManager?</string>
+    <string name="phoneapi_body">PhoneAPI gets its own key to App Manager\'s local API, separate from yours, and passes it only to the agents you switch on there. It may do only what you switch on here.</string>
+    <string name="phoneapi_turns_on">This switches the local API on.</string>
+    <string name="phoneapi_replaces">PhoneAPI\'s old key stops working.</string>
+    <string name="phoneapi_may">IT MAY</string>
+    <string name="phoneapi_see">See (every GET): the catalog, versions, installs, sources and settings</string>
+    <string name="phoneapi_change">Change (everything else): install, update, remove and open apps, edit sources and settings</string>
+    <string name="phoneapi_deny">Don\'t allow</string>
+    <string name="phoneapi_allow">Allow</string>
+    <string name="phoneapi_none">PhoneAPI: no key. Get one from PhoneAPI\'s Providers screen.</string>
+    <string name="phoneapi_linked">PhoneAPI has a key: may %1$s.</string>
+    <string name="phoneapi_linked_see">see</string>
+    <string name="phoneapi_linked_change">change</string>
+    <string name="phoneapi_linked_both">see and change</string>
+    <string name="phoneapi_unlink">Unlink PhoneAPI</string>
+    <string name="phoneapi_unlinked">PhoneAPI\'s key stops working now</string>
     <string name="api_tap_text">Requested over the local API — tap to continue</string>
 </resources>

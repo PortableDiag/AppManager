@@ -66,6 +66,29 @@
             android:theme="@style/Theme.AppManager"
             android:parentActivityName=".MainActivity" />
 
+        <!-- PhoneAPI asks for a key (its provider contract §3). The activity checks the caller is
+             PhoneAPI's release build before it shows anything. -->
+        <activity
+            android:name=".api.PhoneApiGrantActivity"
+            android:exported="true"
+            android:excludeFromRecents="true"
+            android:theme="@style/Theme.AppManager">
+            <intent-filter>
+                <action android:name="com.phoneapi.action.GRANT_KEY" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
+        <!-- PhoneAPI uninstalled: its key goes with it. -->
+        <receiver
+            android:name=".api.PhoneApiGoneReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.PACKAGE_FULLY_REMOVED" />
+                <data android:scheme="package" />
+            </intent-filter>
+        </receiver>
+
         <!-- The local API's own foreground service: off until switched on in the app. -->
         <service
             android:name=".api.ApiService"

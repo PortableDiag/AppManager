@@ -135,7 +135,13 @@ class ApiResponse(
 }
 
 /** Anything a handler can fail with that the caller should see as a status code, not a 500. */
-class ApiException(val status: Int, message: String, val hint: String? = null) : Exception(message)
+class ApiException(
+    val status: Int,
+    message: String,
+    val hint: String? = null,
+    /** The headers, when they were read before the request failed: the proof header needs them. */
+    val requestHeaders: Map<String, String>? = null
+) : Exception(message)
 
 object Http {
 
@@ -172,7 +178,7 @@ object Http {
         }
 
         val length = headers["content-length"]?.toIntOrNull() ?: 0
-        if (length > MAX_BODY) throw ApiException(413, "body larger than ${MAX_BODY} bytes")
+        if (length > MAX_BODY) throw ApiException(413, "body larger than ${MAX_BODY} bytes", requestHeaders = headers)
         val body = if (length > 0) readFully(input, length) else ByteArray(0)
 
         val rawPath = target.substringBefore('?')
