@@ -45,7 +45,12 @@ class PhoneApiGrantActivity : AppCompatActivity() {
         if (PhoneApiLink.linked(this)) body.append(' ').append(getString(R.string.phoneapi_replaces))
         binding.body.text = body
 
-        // Everything starts off, and a key that may do nothing isn't worth minting.
+        // Everything starts off (or as PhoneAPI's current key has it), and a key that may do nothing
+        // isn't worth minting.
+        PhoneApiLink.grant(this)?.let {
+            binding.see.isChecked = it.see
+            binding.change.isChecked = it.change
+        }
         val sync = { binding.allow.isEnabled = binding.see.isChecked || binding.change.isChecked }
         binding.see.setOnCheckedChangeListener { _, _ -> sync() }
         binding.change.setOnCheckedChangeListener { _, _ -> sync() }

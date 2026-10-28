@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.7.2
+- PhoneAPI's key screen has side margins, says "It may:", and a second link starts the See and
+  Change switches where PhoneAPI's current key has them.
+
 ## 1.7.1
 - **PhoneAPI can link to App Manager** (PhoneAPI provider contract §2 and §3). PhoneAPI's
   release build asks for a key on App Manager's own screen ("Let PhoneAPI use AppManager?"),
