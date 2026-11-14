@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.7.4
+- Favorite developers' new releases show up in Updates. The repo cache only re-read a
+  release when GitHub's `updated_at` moved, which a push or a release never changes, so
+  KeyX 0.2.21 stayed hidden behind 0.2.20. It now also watches `pushed_at`.
+
 ## 1.7.3
 - The local API comes back after App Manager is updated, not only after a reboot, so PhoneAPI
   keeps it across updates without the app being opened.

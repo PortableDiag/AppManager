@@ -575,7 +575,9 @@ object AppRepository {
             val r = repos.getJSONObject(i)
             if (r.optBoolean("fork") || r.optBoolean("archived")) continue
             val full = r.optString("full_name")
-            val updated = r.optString("updated_at")
+            // A push or a new release moves pushed_at but leaves updated_at alone, so
+            // keying on updated_at alone kept serving a stale "latest release".
+            val updated = r.optString("updated_at") + "|" + r.optString("pushed_at")
             val cached = prevByName[full]
             val entry = if (cached != null && cached.optString("updated") == updated) {
                 cached
